@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "368334236290",
+    "project_id": "back2life-9b695",
+    "storage_bucket": "back2life-9b695.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368334236290:android:41f1bf01dc5e3f567b629b",
+        "android_client_info": {
+          "package_name": "com.example.back2life"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAue6ApcQRx0PVgyzKfOb2xFPmmt8aZSrk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
