@@ -6,7 +6,6 @@ import com.example.back2life.data.model.Post
 import com.example.back2life.data.model.PostType
 import com.example.back2life.data.repo.AuthRepository
 import com.example.back2life.data.repo.PostRepository
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -30,11 +29,17 @@ class CrearPostViewModel(
         descripcion: String,
         tipo: PostType,
         precio: Double,
-        lugar: String
+        lugar: String,
+        fechaExp: String // <-- Nuevo parámetro
     ) = viewModelScope.launch {
         val uid = authRepo.currentUser?.uid
         if (uid == null) {
             _estado.value = CrearPostEstado(error = "No hay sesión iniciada")
+            return@launch
+        }
+
+        if (titulo.isBlank() || descripcion.isBlank() || lugar.isBlank() || fechaExp.isBlank()) {
+            _estado.value = CrearPostEstado(error = "Por favor llena todos los campos")
             return@launch
         }
 
@@ -43,19 +48,19 @@ class CrearPostViewModel(
         runCatching {
             postRepo.crearPost(
                 Post(
-                    autorId = uid,
+                    autorId = uid as String,
                     titulo = titulo.trim(),
                     descripcion = descripcion.trim(),
                     tipo = tipo,
                     precio = precio,
                     lugar = lugar.trim(),
-                    fechaExp = Timestamp.now()
+                    fechaExp = fechaExp.trim() // <-- Se guarda el texto ingresado
                 )
             )
         }.onSuccess { id ->
             _estado.value = CrearPostEstado(postCreadoId = id)
         }.onFailure {
-            _estado.value = CrearPostEstado(error = it.message)
+            _estado.value = CrearPostEstado(error = "Error al publicar: ${it.message}")
         }
     }
 

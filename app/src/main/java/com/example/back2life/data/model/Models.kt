@@ -20,7 +20,7 @@ data class Post(
     val titulo: String = "",
     val descripcion: String = "",
     val tipo: PostType = PostType.COMIDA,
-    val fechaExp: Timestamp? = null,
+    val fechaExp: String = "", // <-- Cambiado a String para simplificar
     val estado: PostStatus = PostStatus.DISPONIBLE,
     val precio: Double = 0.0,
     val lugar: String = "",

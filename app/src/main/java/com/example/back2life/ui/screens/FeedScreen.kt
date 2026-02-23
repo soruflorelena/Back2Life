@@ -8,9 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.back2life.data.repo.AuthRepository
 import com.example.back2life.ui.viewmodel.FeedViewModel
 
+@OptIn(ExperimentalMaterial3Api::class) // <-- Requerido para TopAppBar en Material 3
 @Composable
 fun FeedScreen(
     onCreate: () -> Unit,
@@ -19,7 +19,6 @@ fun FeedScreen(
     vm: FeedViewModel = FeedViewModel()
 ) {
     val estado by vm.estado.collectAsState()
-    val authRepo = remember { AuthRepository() }
 
     LaunchedEffect(Unit) { vm.cargar() }
 
@@ -29,7 +28,7 @@ fun FeedScreen(
                 title = { Text("Publicaciones") },
                 actions = {
                     TextButton(onClick = {
-                        authRepo.logout()
+                        vm.cerrarSesion() // <-- Ahora el VM maneja esto
                         onLogout()
                     }) { Text("Salir") }
                 }
@@ -47,14 +46,15 @@ fun FeedScreen(
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(estado.posts) { post ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { onOpen(post.id) }
+                        modifier = Modifier.fillMaxWidth().clickable { onOpen(post.id) },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // <-- Un poco de sombra mejora el aspecto visual
                     ) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(post.titulo, style = MaterialTheme.typography.titleMedium)
-                            Text(post.descripcion, maxLines = 2)
-                            Text("Lugar: ${post.lugar}")
-                            Text("Precio: ${post.precio}")
-                            Text("Estado: ${post.estado}")
+                            Text(post.descripcion, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
+                            Text("Caduca: ${post.fechaExp}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("Lugar: ${post.lugar}", style = MaterialTheme.typography.bodySmall)
+                            Text("Precio: $${post.precio}", style = MaterialTheme.typography.bodySmall) // <-- Asumiendo MXN
                         }
                     }
                 }
