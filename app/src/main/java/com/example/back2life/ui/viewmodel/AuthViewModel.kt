@@ -7,35 +7,37 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class AuthState(
-    val esLogueado: Boolean = false,
+data class AuthEstado(
     val cargando: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val esLogueado: Boolean = false
 )
 
 class AuthViewModel(
     private val repo: AuthRepository = AuthRepository()
 ) : ViewModel() {
+    private val _state = MutableStateFlow(AuthEstado(esLogueado = repo.currentUser != null))
+    val state = _state.asStateFlow()
 
-    private val _estado = MutableStateFlow(AuthState(esLogueado = repo.currentUser != null))
-    val state = _estado.asStateFlow()
-
-    fun login(email: String, password: String) = viewModelScope.launch {
-        _estado.value = _estado.value.copy(cargando = true, error = null)
-        runCatching { repo.login(email, password) }
-            .onSuccess { _estado.value = AuthState(esLogueado = true) }
-            .onFailure { _estado.value = AuthState(esLogueado = false, error = it.message) }
+    fun registrar(email: String, contra: String, nombre: String) = viewModelScope.launch {
+        if (email.isBlank() || contra.isBlank() || nombre.isBlank()) {
+            _state.value = AuthEstado(error = "Llena todos los campos")
+            return@launch
+        }
+        _state.value = AuthEstado(cargando = true)
+        runCatching { repo.registrar(email, contra, nombre) }
+            .onSuccess { _state.value = AuthEstado(esLogueado = true) }
+            .onFailure { _state.value = AuthEstado(error = it.message) }
     }
 
-    fun registrar(email: String, password: String) = viewModelScope.launch {
-        _estado.value = _estado.value.copy(cargando = true, error = null)
-        runCatching { repo.registrar(email, password) }
-            .onSuccess { _estado.value = AuthState(esLogueado = true) }
-            .onFailure { _estado.value = AuthState(esLogueado = false, error = it.message) }
-    }
-
-    fun logout() {
-        repo.logout()
-        _estado.value = AuthState(esLogueado = false)
+    fun login(email: String, contra: String) = viewModelScope.launch {
+        if (email.isBlank() || contra.isBlank()) {
+            _state.value = AuthEstado(error = "Llena todos los campos")
+            return@launch
+        }
+        _state.value = AuthEstado(cargando = true)
+        runCatching { repo.login(email, contra) }
+            .onSuccess { _state.value = AuthEstado(esLogueado = true) }
+            .onFailure { _state.value = AuthEstado(error = it.message) }
     }
 }

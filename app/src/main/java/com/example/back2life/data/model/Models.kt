@@ -36,3 +36,12 @@ data class Comentario(
     val texto: String = "",
     val creado: Timestamp? = null
 )
+
+data class Comentario(
+    val id: String = "",
+    val postId: String = "",
+    val autorId: String = "",
+    val autorNombre: String = "Usuario", // <-- NUEVO CAMPO
+    val texto: String = "",
+    val creado: Timestamp? = null
+)

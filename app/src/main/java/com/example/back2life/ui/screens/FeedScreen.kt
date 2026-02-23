@@ -11,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.back2life.data.model.PostStatus
-import com.example.back2life.data.repo.AuthRepository
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import com.example.back2life.ui.viewmodel.FeedViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,13 +20,11 @@ import com.example.back2life.ui.viewmodel.FeedViewModel
 fun FeedScreen(
     onCreate: () -> Unit,
     onOpen: (String) -> Unit,
-    onLogout: () -> Unit,
+    onProfile: () -> Unit, // <-- Cambiamos onLogout por onProfile
     vm: FeedViewModel = FeedViewModel()
 ) {
     val estado by vm.estado.collectAsState()
-    val authRepo = remember { AuthRepository() }
 
-    // Recargar siempre que se entra a la pantalla
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
@@ -34,10 +32,9 @@ fun FeedScreen(
             TopAppBar(
                 title = { Text("Publicaciones", fontWeight = FontWeight.Bold) },
                 actions = {
-                    TextButton(onClick = {
-                        authRepo.logout()
-                        onLogout()
-                    }) { Text("Salir") }
+                    IconButton(onClick = onProfile) { // <-- Ícono de usuario
+                        Icon(Icons.Default.Person, contentDescription = "Perfil")
+                    }
                 }
             )
         },

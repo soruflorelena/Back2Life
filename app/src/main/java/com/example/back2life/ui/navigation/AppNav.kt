@@ -7,10 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.back2life.ui.screens.AuthScreen
-import com.example.back2life.ui.screens.CrearPostScreen
-import com.example.back2life.ui.screens.FeedScreen
-import com.example.back2life.ui.screens.PostDetalleScreen
+import com.example.back2life.ui.screens.*
 
 @Composable
 fun AppNav(start: String) {
@@ -21,46 +18,23 @@ fun AppNav(start: String) {
 @Composable
 fun AppNavHost(nav: NavHostController, start: String) {
     NavHost(navController = nav, startDestination = start) {
-
-        composable(route = Ruta.Auth.camino) {
-            AuthScreen(
-                onAuthed = {
-                    nav.navigate(Ruta.Feed.camino) {
-                        popUpTo(Ruta.Auth.camino) { inclusive = true }
-                    }
-                }
-            )
-        }
-
+        composable(route = Ruta.Auth.camino) { AuthScreen(onAuthed = { nav.navigate(Ruta.Feed.camino) { popUpTo(Ruta.Auth.camino) { inclusive = true } } }) }
         composable(route = Ruta.Feed.camino) {
             FeedScreen(
                 onCreate = { nav.navigate(Ruta.CrearPost.camino) },
                 onOpen = { postId -> nav.navigate(Ruta.PostDetalle.crear(postId)) },
-                onLogout = {
-                    nav.navigate(Ruta.Auth.camino) {
-                        popUpTo(Ruta.Feed.camino) { inclusive = true }
-                    }
-                }
+                onProfile = { nav.navigate(Ruta.Perfil.camino) }
             )
         }
-
-        composable(route = Ruta.CrearPost.camino) {
-            CrearPostScreen(
-                onCreated = { postId ->
-                    nav.navigate(Ruta.PostDetalle.crear(postId)) {
-                        popUpTo(Ruta.CrearPost.camino) { inclusive = true }
-                    }
-                },
-                onBack = { nav.popBackStack() }
+        composable(route = Ruta.Perfil.camino) {
+            PerfilScreen(
+                onBack = { nav.popBackStack() },
+                onLogout = { nav.navigate(Ruta.Auth.camino) { popUpTo(0) { inclusive = true } } }
             )
         }
-
-        composable(
-            route = Ruta.PostDetalle.camino,
-            arguments = listOf(navArgument("postId") { type = NavType.StringType })
-        ) { backStack ->
-            val postId = backStack.arguments?.getString("postId") ?: ""
-            PostDetalleScreen(postId = postId, onBack = { nav.popBackStack() })
+        composable(route = Ruta.CrearPost.camino) { CrearPostScreen(onCreated = { postId -> nav.navigate(Ruta.PostDetalle.crear(postId)) { popUpTo(Ruta.CrearPost.camino) { inclusive = true } } }, onBack = { nav.popBackStack() }) }
+        composable(route = Ruta.PostDetalle.camino, arguments = listOf(navArgument("postId") { type = NavType.StringType })) { backStack ->
+            PostDetalleScreen(postId = backStack.arguments?.getString("postId") ?: "", onBack = { nav.popBackStack() })
         }
     }
 }
