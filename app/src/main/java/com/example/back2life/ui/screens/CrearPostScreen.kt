@@ -23,22 +23,13 @@ fun CrearPostScreen(
     var desc by remember { mutableStateOf("") }
     var lugar by remember { mutableStateOf("") }
     var precioTexto by remember { mutableStateOf("0") }
-    var fechaExpTexto by remember { mutableStateOf("") } // <-- Nuevo estado
     var tipo by remember { mutableStateOf(PostType.COMIDA) }
-
-    LaunchedEffect(estado.postCreadoId) {
-        val id = estado.postCreadoId ?: return@LaunchedEffect
-        vm.consumeCreated()
-        onCreated(id)
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Crear publicación") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Atrás") }
-                }
+                navigationIcon = { TextButton(onClick = onBack) { Text("Atrás") } }
             )
         }
     ) { padding ->
@@ -47,15 +38,15 @@ fun CrearPostScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()), // <-- Añadido scroll para que no se corte el contenido en pantallas pequeñas
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(titulo, { titulo = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(desc, { desc = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(fechaExpTexto, { fechaExpTexto = it }, label = { Text("Fecha de caducidad (Ej. 12 Dic)") }, modifier = Modifier.fillMaxWidth()) // <-- Nuevo campo
+            OutlinedTextField(desc, { desc = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
             OutlinedTextField(lugar, { lugar = it }, label = { Text("Lugar de entrega") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(precioTexto, { precioTexto = it }, label = { Text("Precio (0 = donación)") }, modifier = Modifier.fillMaxWidth())
 
+            Text("Categoría:", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilterChip(
                     selected = tipo == PostType.COMIDA,
@@ -72,15 +63,20 @@ fun CrearPostScreen(
             if (estado.error != null) Text(estado.error!!, color = MaterialTheme.colorScheme.error)
             if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
 
+            Spacer(modifier = Modifier.weight(1f))
+
             Button(
                 onClick = {
                     val precio = precioTexto.toDoubleOrNull() ?: 0.0
-                    vm.create(titulo, desc, tipo, precio, lugar, fechaExpTexto)
+                    // Pasamos la navegación como callback
+                    vm.create(titulo, desc, tipo, precio, lugar) { postId ->
+                        onCreated(postId)
+                    }
                 },
                 enabled = !estado.cargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Publicar")
+                Text(if (estado.cargando) "Publicando..." else "Publicar")
             }
         }
     }

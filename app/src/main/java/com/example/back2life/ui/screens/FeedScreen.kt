@@ -4,13 +4,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.back2life.data.model.PostStatus
+import com.example.back2life.data.repo.AuthRepository
 import com.example.back2life.ui.viewmodel.FeedViewModel
 
-@OptIn(ExperimentalMaterial3Api::class) // <-- Requerido para TopAppBar en Material 3
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     onCreate: () -> Unit,
@@ -19,42 +24,98 @@ fun FeedScreen(
     vm: FeedViewModel = FeedViewModel()
 ) {
     val estado by vm.estado.collectAsState()
+    val authRepo = remember { AuthRepository() }
 
+    // Recargar siempre que se entra a la pantalla
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Publicaciones") },
+                title = { Text("Publicaciones", fontWeight = FontWeight.Bold) },
                 actions = {
                     TextButton(onClick = {
-                        vm.cerrarSesion() // <-- Ahora el VM maneja esto
+                        authRepo.logout()
                         onLogout()
                     }) { Text("Salir") }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onCreate) { Text("+") }
+            ExtendedFloatingActionButton(
+                onClick = onCreate,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Text("Nueva Publicación")
+            }
         }
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().padding(12.dp)) {
+        Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
 
-            if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
             if (estado.error != null) Text(estado.error!!, color = MaterialTheme.colorScheme.error)
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp) // Espacio extra abajo para que el botón flotante no tape
+            ) {
                 items(estado.posts) { post ->
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable { onOpen(post.id) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // <-- Un poco de sombra mejora el aspecto visual
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(post.titulo, style = MaterialTheme.typography.titleMedium)
+                        Column(Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = post.titulo,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                // Mostrar un texto especial si es donación
+                                Text(
+                                    text = if (post.precio <= 0.0) "GRATIS" else "$${post.precio}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             Text(post.descripcion, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
-                            Text("Caduca: ${post.fechaExp}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            Text("Lugar: ${post.lugar}", style = MaterialTheme.typography.bodySmall)
-                            Text("Precio: $${post.precio}", style = MaterialTheme.typography.bodySmall) // <-- Asumiendo MXN
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer
+                                ) {
+                                    Text(
+                                        text = post.tipo.name,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+
+                                Text(
+                                    text = post.lugar,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
