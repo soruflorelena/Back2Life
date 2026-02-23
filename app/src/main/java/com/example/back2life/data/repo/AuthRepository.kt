@@ -1,5 +1,6 @@
 package com.example.back2life.data.repo
 
+import android.util.Log
 import com.example.back2life.data.model.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,12 +13,25 @@ class AuthRepository(
     val currentUser get() = auth.currentUser
 
     suspend fun registrar(email: String, password: String, nombre: String) {
-        auth.createUserWithEmailAndPassword(email, password).await()
-        val uid = auth.currentUser?.uid ?: return
+        // 1. Crear usuario en Authentication
+        val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+        val uid = authResult.user?.uid ?: throw Exception("No se pudo obtener el ID del usuario")
 
-        // Guardamos el perfil con el nombre en Firestore
-        val perfil = UserProfile(uid = uid, nombre = nombre, email = email)
-        db.collection("usuarios").document(uid).set(perfil).await()
+        // 2. Intentar guardar el perfil en Firestore
+        try {
+            val perfil = UserProfile(uid = uid, nombre = nombre, email = email)
+            db.collection("usuarios").document(uid).set(perfil).await()
+        } catch (e: Exception) {
+            // SI FALLA LA BASE DE DATOS: Borramos la cuenta para que el usuario pueda volver a intentarlo
+            Log.e("AuthRepository", "Error en Firestore: ${e.message}")
+            authResult.user?.delete()?.await() // Eliminamos la cuenta fantasma
+
+            if (e.message?.contains("PERMISSION_DENIED") == true) {
+                throw Exception("PERMISSION_DENIED")
+            } else {
+                throw Exception(e.message)
+            }
+        }
     }
 
     suspend fun login(email: String, password: String) {

@@ -19,15 +19,13 @@ class AuthViewModel(
     private val _state = MutableStateFlow(AuthEstado(esLogueado = repo.currentUser != null))
     val state = _state.asStateFlow()
 
-    // Validador de formato de correo usando una herramienta nativa de Android
     private fun esEmailValido(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     fun registrar(email: String, contra: String, nombre: String) = viewModelScope.launch {
-        // Validaciones antes de llamar a Firebase
         if (nombre.trim().isEmpty()) {
-            _state.value = AuthEstado(error = "Por favor ingresa tu nombre completo")
+            _state.value = AuthEstado(error = "Ingresa tu nombre completo")
             return@launch
         }
         if (!esEmailValido(email)) {
@@ -35,7 +33,7 @@ class AuthViewModel(
             return@launch
         }
         if (contra.length < 6) {
-            _state.value = AuthEstado(error = "La contraseña debe tener al menos 6 caracteres")
+            _state.value = AuthEstado(error = "La contraseña debe tener mínimo 6 caracteres")
             return@launch
         }
 
@@ -46,13 +44,12 @@ class AuthViewModel(
     }
 
     fun login(email: String, contra: String) = viewModelScope.launch {
-        // Validaciones de login
         if (!esEmailValido(email)) {
             _state.value = AuthEstado(error = "El formato del correo no es válido")
             return@launch
         }
         if (contra.isEmpty()) {
-            _state.value = AuthEstado(error = "Por favor ingresa tu contraseña")
+            _state.value = AuthEstado(error = "Ingresa tu contraseña")
             return@launch
         }
 
@@ -62,19 +59,17 @@ class AuthViewModel(
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }
 
-    // Traduce las excepciones de Firebase a mensajes legibles
     private fun traducirError(e: Throwable): String {
         val msg = e.message ?: return "Error desconocido"
         return when {
             msg.contains("already in use", ignoreCase = true) -> "Este correo ya está registrado."
             msg.contains("invalid-credential", ignoreCase = true) -> "Correo o contraseña incorrectos."
-            msg.contains("network error", ignoreCase = true) -> "Revisa tu conexión a internet."
             msg.contains("badly formatted", ignoreCase = true) -> "El correo está mal escrito."
+            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Error crítico: Firestore no permite guardar datos. Revisa tus reglas en Firebase."
             else -> "Error: $msg"
         }
     }
 
-    // Función para limpiar el mensaje de error de la pantalla
     fun limpiarError() {
         if (_state.value.error != null) {
             _state.value = _state.value.copy(error = null)
