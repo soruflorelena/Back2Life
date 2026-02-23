@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 
+// CORRECCIÓN: Se añade esta línea para permitir el uso de TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetalleScreen(
     postId: String,
