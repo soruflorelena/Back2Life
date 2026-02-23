@@ -23,6 +23,7 @@ fun CrearPostScreen(
     var desc by remember { mutableStateOf("") }
     var lugar by remember { mutableStateOf("") }
     var precioTexto by remember { mutableStateOf("0") }
+    var fechaExpTexto by remember { mutableStateOf("") } // <-- Recuperamos la variable de fecha
     var tipo by remember { mutableStateOf(PostType.COMIDA) }
 
     Scaffold(
@@ -43,6 +44,7 @@ fun CrearPostScreen(
         ) {
             OutlinedTextField(titulo, { titulo = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(desc, { desc = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+            OutlinedTextField(fechaExpTexto, { fechaExpTexto = it }, label = { Text("Fecha de caducidad (Ej. 12 Dic)") }, modifier = Modifier.fillMaxWidth()) // <-- Nuevo campo visual
             OutlinedTextField(lugar, { lugar = it }, label = { Text("Lugar de entrega") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(precioTexto, { precioTexto = it }, label = { Text("Precio (0 = donación)") }, modifier = Modifier.fillMaxWidth())
 
@@ -68,8 +70,8 @@ fun CrearPostScreen(
             Button(
                 onClick = {
                     val precio = precioTexto.toDoubleOrNull() ?: 0.0
-                    // Pasamos la navegación como callback
-                    vm.create(titulo, desc, tipo, precio, lugar) { postId ->
+                    // <-- Pasamos la fechaExpTexto a la función
+                    vm.create(titulo, desc, tipo, precio, lugar, fechaExpTexto) { postId ->
                         onCreated(postId)
                     }
                 },

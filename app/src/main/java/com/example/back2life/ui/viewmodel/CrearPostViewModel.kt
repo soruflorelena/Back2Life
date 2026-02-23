@@ -6,7 +6,6 @@ import com.example.back2life.data.model.Post
 import com.example.back2life.data.model.PostType
 import com.example.back2life.data.repo.AuthRepository
 import com.example.back2life.data.repo.PostRepository
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -30,7 +29,8 @@ class CrearPostViewModel(
         tipo: PostType,
         precio: Double,
         lugar: String,
-        onExito: (String) -> Unit // <-- Callback directo para asegurar la navegación
+        fechaExp: String, // <-- Corregido: Ahora recibe el String de la fecha
+        onExito: (String) -> Unit
     ) = viewModelScope.launch {
         val uid = authRepo.currentUser?.uid
         if (uid == null) {
@@ -38,7 +38,7 @@ class CrearPostViewModel(
             return@launch
         }
 
-        if (titulo.isBlank() || descripcion.isBlank() || lugar.isBlank()) {
+        if (titulo.isBlank() || descripcion.isBlank() || lugar.isBlank() || fechaExp.isBlank()) {
             _estado.value = CrearPostEstado(error = "Por favor llena todos los campos")
             return@launch
         }
@@ -54,12 +54,12 @@ class CrearPostViewModel(
                     tipo = tipo,
                     precio = precio,
                     lugar = lugar.trim(),
-                    fechaExp = Timestamp.now()
+                    fechaExp = fechaExp.trim() // <-- Corregido: Guardamos el texto ingresado
                 )
             )
         }.onSuccess { id ->
             _estado.value = CrearPostEstado(cargando = false)
-            onExito(id) // <-- Dispara la navegación en cuanto termina de guardar
+            onExito(id)
         }.onFailure {
             _estado.value = CrearPostEstado(error = it.message)
         }
