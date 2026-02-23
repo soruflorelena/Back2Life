@@ -68,10 +68,10 @@ class AuthViewModel(
     private fun traducirError(e: Throwable): String {
         val msg = e.message ?: return "Error desconocido"
         return when {
-            msg.contains("already in use", ignoreCase = true) -> "Este correo ya está registrado."
+            msg.contains("already in use", ignoreCase = true) -> "Este correo ya está registrado"
             msg.contains("invalid-credential", ignoreCase = true) -> "Correo o contraseña incorrectos."
             msg.contains("badly formatted", ignoreCase = true) -> "El correo está mal escrito."
-            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Error crítico: Firestore no permite guardar datos."
+            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Firestore no permite guardar datos."
             else -> "Error: $msg"
         }
     }
