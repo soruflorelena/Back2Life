@@ -16,8 +16,12 @@ import com.example.back2life.data.repo.AuthRepository
 fun PerfilScreen(onBack: () -> Unit, onLogout: () -> Unit) {
     val authRepo = remember { AuthRepository() }
     var perfil by remember { mutableStateOf<UserProfile?>(null) }
+    var cargando by remember { mutableStateOf(true) } // <-- NUEVO: Variable exclusiva para la carga
 
-    LaunchedEffect(Unit) { perfil = authRepo.obtenerPerfilActual() }
+    LaunchedEffect(Unit) {
+        perfil = authRepo.obtenerPerfilActual()
+        cargando = false // <-- Apagamos la carga pase lo que pase
+    }
 
     Scaffold(
         topBar = {
@@ -28,11 +32,15 @@ fun PerfilScreen(onBack: () -> Unit, onLogout: () -> Unit) {
             Icon(Icons.Default.AccountCircle, contentDescription = "Avatar", modifier = Modifier.size(100.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (perfil != null) {
+            if (cargando) {
+                CircularProgressIndicator() // Solo gira mientras está buscando en la BD
+            } else if (perfil != null) {
                 Text(perfil!!.nombre, style = MaterialTheme.typography.headlineMedium)
                 Text(perfil!!.email, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                CircularProgressIndicator()
+                // Si la BD devolvió null (ej. tu cuenta fantasma actual)
+                Text("Perfil incompleto o no encontrado.", color = MaterialTheme.colorScheme.error)
+                Text("Crea una nueva cuenta para solucionar este problema.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }
 
             Spacer(modifier = Modifier.weight(1f))

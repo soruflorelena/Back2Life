@@ -1,10 +1,10 @@
 package com.example.back2life.data.repo
 
-import android.util.Log
 import com.example.back2life.data.model.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AuthRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -17,20 +17,17 @@ class AuthRepository(
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
         val uid = authResult.user?.uid ?: throw Exception("No se pudo obtener el ID del usuario")
 
-        // 2. Intentar guardar el perfil en Firestore
-        try {
-            val perfil = UserProfile(uid = uid, nombre = nombre, email = email)
-            db.collection("usuarios").document(uid).set(perfil).await()
-        } catch (e: Exception) {
-            // SI FALLA LA BASE DE DATOS: Borramos la cuenta para que el usuario pueda volver a intentarlo
-            Log.e("AuthRepository", "Error en Firestore: ${e.message}")
-            authResult.user?.delete()?.await() // Eliminamos la cuenta fantasma
+        val perfil = UserProfile(uid = uid, nombre = nombre, email = email)
 
-            if (e.message?.contains("PERMISSION_DENIED") == true) {
-                throw Exception("PERMISSION_DENIED")
-            } else {
-                throw Exception(e.message)
-            }
+        // 2. Intentar guardar en Firestore con un límite de 5 segundos
+        val exito = withTimeoutOrNull(5000) {
+            db.collection("usuarios").document(uid).set(perfil).await()
+            true // Retorna true si lo logró a tiempo
+        }
+
+        if (exito == null) {
+            // Si pasaron 5 segundos y Firestore no respondió, lanzamos el error a la pantalla
+            throw Exception("La base de datos no responde. Verifica tu conexión a internet o las Reglas de Firestore.")
         }
     }
 
@@ -43,8 +40,11 @@ class AuthRepository(
     suspend fun obtenerPerfilActual(): UserProfile? {
         val uid = currentUser?.uid ?: return null
         return try {
-            val doc = db.collection("usuarios").document(uid).get().await()
-            doc.toObject(UserProfile::class.java)
+            // También le ponemos límite de tiempo al obtener el perfil
+            withTimeoutOrNull(5000) {
+                val doc = db.collection("usuarios").document(uid).get().await()
+                doc.toObject(UserProfile::class.java)
+            }
         } catch (e: Exception) { null }
     }
 }
