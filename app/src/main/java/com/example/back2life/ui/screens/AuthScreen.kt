@@ -85,7 +85,6 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
         } else {
             Button(
                 onClick = {
-                    // AHORA MANDAMOS LA INSTRUCCIÓN DE NAVEGAR DIRECTAMENTE A LA FUNCIÓN
                     if (esLogin) {
                         vm.login(email, contra) { onAuthed() }
                     } else {

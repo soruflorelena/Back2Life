@@ -17,7 +17,7 @@ data class FeedEstado(
 
 class FeedViewModel(
     private val repo: PostRepository = PostRepository(),
-    private val authRepo: AuthRepository = AuthRepository() // <-- Añadido
+    private val authRepo: AuthRepository = AuthRepository()
 ) : ViewModel() {
     private val _estado = MutableStateFlow(FeedEstado())
     val estado = _estado.asStateFlow()

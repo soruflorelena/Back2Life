@@ -20,7 +20,7 @@ fun PerfilScreen(onBack: () -> Unit, onLogout: () -> Unit) {
 
     LaunchedEffect(Unit) {
         perfil = authRepo.obtenerPerfilActual()
-        cargando = false // <-- Apagamos la carga pase lo que pase
+        cargando = false
     }
 
     Scaffold(
@@ -33,12 +33,11 @@ fun PerfilScreen(onBack: () -> Unit, onLogout: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (cargando) {
-                CircularProgressIndicator() // Solo gira mientras está buscando en la BD
+                CircularProgressIndicator()
             } else if (perfil != null) {
                 Text(perfil!!.nombre, style = MaterialTheme.typography.headlineMedium)
                 Text(perfil!!.email, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                // Si la BD devolvió null (ej. tu cuenta fantasma actual)
                 Text("Perfil incompleto o no encontrado.", color = MaterialTheme.colorScheme.error)
                 Text("Crea una nueva cuenta para solucionar este problema.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }

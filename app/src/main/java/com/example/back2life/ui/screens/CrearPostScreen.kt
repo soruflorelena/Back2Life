@@ -23,7 +23,7 @@ fun CrearPostScreen(
     var desc by remember { mutableStateOf("") }
     var lugar by remember { mutableStateOf("") }
     var precioTexto by remember { mutableStateOf("0") }
-    var fechaExpTexto by remember { mutableStateOf("") } // <-- Recuperamos la variable de fecha
+    var fechaExpTexto by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(PostType.COMIDA) }
 
     Scaffold(
@@ -70,7 +70,6 @@ fun CrearPostScreen(
             Button(
                 onClick = {
                     val precio = precioTexto.toDoubleOrNull() ?: 0.0
-                    // <-- Pasamos la fechaExpTexto a la función
                     vm.create(titulo, desc, tipo, precio, lugar, fechaExpTexto) { postId ->
                         onCreated(postId)
                     }

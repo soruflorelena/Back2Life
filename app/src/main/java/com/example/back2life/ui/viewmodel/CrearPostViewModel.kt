@@ -29,7 +29,7 @@ class CrearPostViewModel(
         tipo: PostType,
         precio: Double,
         lugar: String,
-        fechaExp: String, // <-- Corregido: Ahora recibe el String de la fecha
+        fechaExp: String,
         onExito: (String) -> Unit
     ) = viewModelScope.launch {
         val uid = authRepo.currentUser?.uid
@@ -54,7 +54,7 @@ class CrearPostViewModel(
                     tipo = tipo,
                     precio = precio,
                     lugar = lugar.trim(),
-                    fechaExp = fechaExp.trim() // <-- Corregido: Guardamos el texto ingresado
+                    fechaExp = fechaExp.trim()
                 )
             )
         }.onSuccess { id ->

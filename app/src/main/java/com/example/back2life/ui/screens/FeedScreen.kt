@@ -20,7 +20,7 @@ import com.example.back2life.ui.viewmodel.FeedViewModel
 fun FeedScreen(
     onCreate: () -> Unit,
     onOpen: (String) -> Unit,
-    onProfile: () -> Unit, // <-- Cambiamos onLogout por onProfile
+    onProfile: () -> Unit,
     vm: FeedViewModel = FeedViewModel()
 ) {
     val estado by vm.estado.collectAsState()
@@ -32,7 +32,7 @@ fun FeedScreen(
             TopAppBar(
                 title = { Text("Publicaciones", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = onProfile) { // <-- Ícono de usuario
+                    IconButton(onClick = onProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil")
                     }
                 }

@@ -23,7 +23,6 @@ class AuthViewModel(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
-    // AÑADIDO: Recibimos onSuccess como parámetro
     fun registrar(email: String, contra: String, nombre: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (nombre.trim().isEmpty()) {
             _state.value = AuthEstado(error = "Ingresa tu nombre completo")
@@ -42,12 +41,11 @@ class AuthViewModel(
         runCatching { repo.registrar(email.trim(), contra, nombre.trim()) }
             .onSuccess {
                 _state.value = AuthEstado(esLogueado = true)
-                onSuccess() // <-- Forzamos la navegación inmediatamente al tener éxito
+                onSuccess()
             }
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }
 
-    // AÑADIDO: Recibimos onSuccess como parámetro
     fun login(email: String, contra: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (!esEmailValido(email)) {
             _state.value = AuthEstado(error = "El formato del correo no es válido")
@@ -62,7 +60,7 @@ class AuthViewModel(
         runCatching { repo.login(email.trim(), contra) }
             .onSuccess {
                 _state.value = AuthEstado(esLogueado = true)
-                onSuccess() // <-- Forzamos la navegación inmediatamente
+                onSuccess()
             }
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }

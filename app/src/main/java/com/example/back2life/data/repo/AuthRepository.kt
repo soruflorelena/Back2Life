@@ -26,8 +26,7 @@ class AuthRepository(
         }
 
         if (exito == null) {
-            // Si pasaron 5 segundos y Firestore no respondió, lanzamos el error a la pantalla
-            throw Exception("La base de datos no responde. Verifica tu conexión a internet o las Reglas de Firestore.")
+            throw Exception("La base de datos no responde.")
         }
     }
 
@@ -40,7 +39,6 @@ class AuthRepository(
     suspend fun obtenerPerfilActual(): UserProfile? {
         val uid = currentUser?.uid ?: return null
         return try {
-            // También le ponemos límite de tiempo al obtener el perfil
             withTimeoutOrNull(5000) {
                 val doc = db.collection("usuarios").document(uid).get().await()
                 doc.toObject(UserProfile::class.java)
