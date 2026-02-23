@@ -10,55 +10,27 @@ import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.AuthViewModel
 
 @Composable
-fun AuthScreen(
-    onAuthed: () -> Unit,
-    vm: AuthViewModel = AuthViewModel()
-) {
+fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
     val estado by vm.state.collectAsState()
-
+    var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var contra by remember { mutableStateOf("") }
-    var esLogin by remember { mutableStateOf(true) } // <-- Controla si mostramos Login o Registro
+    var esLogin by remember { mutableStateOf(true) }
 
-    LaunchedEffect(estado.esLogueado) {
-        if (estado.esLogueado) onAuthed()
-    }
+    LaunchedEffect(estado.esLogueado) { if (estado.esLogueado) onAuthed() }
 
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Back 2 Life",
-            style = MaterialTheme.typography.displaySmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = if (esLogin) "Bienvenido de nuevo" else "Crea una cuenta",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Back 2 Life", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+        Text(if (esLogin) "Bienvenido de nuevo" else "Crea una cuenta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 24.dp))
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+        if (!esLogin) {
+            OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre completo") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Correo electrónico") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = contra,
-            onValueChange = { contra = it },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
+        OutlinedTextField(value = contra, onValueChange = { contra = it }, label = { Text("Contraseña") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), singleLine = true)
         Spacer(modifier = Modifier.height(16.dp))
 
         if (estado.error != null) {
@@ -69,12 +41,14 @@ fun AuthScreen(
             CircularProgressIndicator()
         } else {
             Button(
-                onClick = { if (esLogin) vm.login(email, contra) else vm.registrar(email, contra) },
+                onClick = {
+                    if (esLogin) vm.login(email, contra)
+                    else vm.registrar(email, contra, nombre)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (esLogin) "Iniciar Sesión" else "Registrarme")
             }
-
             TextButton(onClick = { esLogin = !esLogin }) {
                 Text(if (esLogin) "¿No tienes cuenta? Regístrate aquí" else "¿Ya tienes cuenta? Inicia sesión")
             }
