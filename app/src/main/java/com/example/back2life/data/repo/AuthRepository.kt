@@ -9,11 +9,13 @@ class AuthRepository(
     val currentUser get() = auth.currentUser
 
     suspend fun registrar(email: String, password: String) {
-        auth.crearUsuarioEmailPassword(email, password).await()
+        // CORRECCIÓN: Usar los métodos oficiales de Firebase en inglés
+        auth.createUserWithEmailAndPassword(email, password).await()
     }
 
     suspend fun login(email: String, password: String) {
-        auth.ingresarEmailPassword(email, password).await()
+        // CORRECCIÓN: Usar los métodos oficiales de Firebase en inglés
+        auth.signInWithEmailAndPassword(email, password).await()
     }
 
     fun logout() = auth.signOut()
