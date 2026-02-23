@@ -23,7 +23,8 @@ class AuthViewModel(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
-    fun registrar(email: String, contra: String, nombre: String) = viewModelScope.launch {
+    // AÑADIDO: Recibimos onSuccess como parámetro
+    fun registrar(email: String, contra: String, nombre: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (nombre.trim().isEmpty()) {
             _state.value = AuthEstado(error = "Ingresa tu nombre completo")
             return@launch
@@ -39,11 +40,15 @@ class AuthViewModel(
 
         _state.value = AuthEstado(cargando = true)
         runCatching { repo.registrar(email.trim(), contra, nombre.trim()) }
-            .onSuccess { _state.value = AuthEstado(esLogueado = true) }
+            .onSuccess {
+                _state.value = AuthEstado(esLogueado = true)
+                onSuccess() // <-- Forzamos la navegación inmediatamente al tener éxito
+            }
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }
 
-    fun login(email: String, contra: String) = viewModelScope.launch {
+    // AÑADIDO: Recibimos onSuccess como parámetro
+    fun login(email: String, contra: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (!esEmailValido(email)) {
             _state.value = AuthEstado(error = "El formato del correo no es válido")
             return@launch
@@ -55,7 +60,10 @@ class AuthViewModel(
 
         _state.value = AuthEstado(cargando = true)
         runCatching { repo.login(email.trim(), contra) }
-            .onSuccess { _state.value = AuthEstado(esLogueado = true) }
+            .onSuccess {
+                _state.value = AuthEstado(esLogueado = true)
+                onSuccess() // <-- Forzamos la navegación inmediatamente
+            }
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }
 
@@ -65,7 +73,7 @@ class AuthViewModel(
             msg.contains("already in use", ignoreCase = true) -> "Este correo ya está registrado."
             msg.contains("invalid-credential", ignoreCase = true) -> "Correo o contraseña incorrectos."
             msg.contains("badly formatted", ignoreCase = true) -> "El correo está mal escrito."
-            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Error crítico: Firestore no permite guardar datos. Revisa tus reglas en Firebase."
+            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Error crítico: Firestore no permite guardar datos."
             else -> "Error: $msg"
         }
     }

@@ -23,9 +23,6 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
     var contra by remember { mutableStateOf("") }
     var esLogin by remember { mutableStateOf(true) }
 
-    LaunchedEffect(estado.esLogueado) { if (estado.esLogueado) onAuthed() }
-
-    // Si el usuario cambia el texto, limpiamos el error visual para que vuelva a intentar
     LaunchedEffect(nombre, email, contra) { vm.limpiarError() }
 
     Column(
@@ -88,10 +85,14 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
         } else {
             Button(
                 onClick = {
-                    if (esLogin) vm.login(email, contra)
-                    else vm.registrar(email, contra, nombre)
+                    // AHORA MANDAMOS LA INSTRUCCIÓN DE NAVEGAR DIRECTAMENTE A LA FUNCIÓN
+                    if (esLogin) {
+                        vm.login(email, contra) { onAuthed() }
+                    } else {
+                        vm.registrar(email, contra, nombre) { onAuthed() }
+                    }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp) // Botón un poco más alto y estético
+                modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
                 Text(if (esLogin) "Iniciar Sesión" else "Registrarme")
             }
@@ -99,7 +100,7 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
             TextButton(
                 onClick = {
                     esLogin = !esLogin
-                    vm.limpiarError() // Al cambiar de modo, limpiamos errores viejos
+                    vm.limpiarError()
                 }
             ) {
                 Text(if (esLogin) "¿No tienes cuenta? Regístrate aquí" else "¿Ya tienes cuenta? Inicia sesión")
