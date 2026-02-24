@@ -11,6 +11,7 @@ import com.example.back2life.data.model.PostType
 import com.example.back2life.ui.viewmodel.CrearPostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun CrearPostScreen(
     onCreated: (String) -> Unit,
