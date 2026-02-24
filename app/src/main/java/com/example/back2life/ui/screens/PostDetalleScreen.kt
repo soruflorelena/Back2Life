@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 
@@ -79,6 +80,7 @@ fun PostDetalleScreen(
                 items(estado.comentarios) { c ->
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(10.dp)) {
+                            Text(c.autorNombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Text(c.texto)
                         }
                     }
