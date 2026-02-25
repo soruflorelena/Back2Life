@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -20,11 +19,26 @@ import com.example.back2life.ui.viewmodel.AuthViewModel
 @Composable
 fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
     val estado by vm.state.collectAsState()
+
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var contra by remember { mutableStateOf("") }
     var esLogin by remember { mutableStateOf(true) }
 
+    // VERIFICACIONES EN TIEMPO REAL
+    // Se actualizan solas cada vez que el usuario teclea una letra
+    val emailValido = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val contraValida = contra.length >= 6
+    val nombreValido = nombre.trim().isNotEmpty()
+
+    // El botón solo se activará si el formulario está perfecto
+    val formularioValido = if (esLogin) {
+        emailValido && contraValida
+    } else {
+        emailValido && contraValida && nombreValido
+    }
+
+    LaunchedEffect(estado.esLogueado) { if (estado.esLogueado) onAuthed() }
     LaunchedEffect(nombre, email, contra) { vm.limpiarError() }
 
     Column(
@@ -35,31 +49,43 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
         Text("Back 2 Life", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
         Text(if (esLogin) "Bienvenido de nuevo" else "Crea una cuenta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 24.dp))
 
+        // CAMPO DE NOMBRE (Solo en registro)
         if (!esLogin) {
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
                 label = { Text("Nombre completo") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Ícono de usuario") },
-                isError = estado.error?.contains("nombre", ignoreCase = true) == true,
+                isError = nombre.isNotEmpty() && !nombreValido,
+                supportingText = {
+                    if (nombre.isNotEmpty() && !nombreValido) Text("El nombre no puede estar vacío")
+                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // CAMPO DE CORREO
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Correo electrónico") },
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Ícono de correo") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = estado.error?.contains("correo", ignoreCase = true) == true,
+            isError = email.isNotEmpty() && !emailValido, // Se pone rojo si está mal
+            supportingText = {
+                // Mensaje de ayuda que aparece abajo del campo
+                if (email.isNotEmpty() && !emailValido) {
+                    Text("Ingresa un correo válido (ej. usuario@correo.com)")
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
 
+        // CAMPO DE CONTRASEÑA
         OutlinedTextField(
             value = contra,
             onValueChange = { contra = it },
@@ -67,13 +93,20 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Ícono de candado") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError = estado.error?.contains("contraseña", ignoreCase = true) == true || estado.error?.contains("caracteres", ignoreCase = true) == true,
+            isError = contra.isNotEmpty() && !contraValida,
+            supportingText = {
+                if (contra.isNotEmpty() && !contraValida) {
+                    Text("Debe tener al menos 6 caracteres")
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
         )
-        Spacer(modifier = Modifier.height(16.dp))
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Mensaje de error de Firebase (ej. "El correo ya está registrado")
         if (estado.error != null) {
             Text(
                 text = estado.error!!,
@@ -88,24 +121,24 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
         } else {
             Button(
                 onClick = {
-                    if (esLogin) {
-                        vm.login(email, contra) { onAuthed() }
-                    } else {
-                        vm.registrar(email, contra, nombre) { onAuthed() }
-                    }
+                    if (esLogin) vm.login(email, contra) { onAuthed() }
+                    else vm.registrar(email, contra, nombre) { onAuthed() }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                enabled = formularioValido, // <-- EL BOTÓN SE BLOQUEA SI HAY ERRORES
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (esLogin) "Iniciar Sesión" else "Registrarme", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(if (esLogin) "Iniciar Sesión" else "Registrarme", style = MaterialTheme.typography.titleMedium)
             }
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(
                 onClick = {
                     esLogin = !esLogin
                     vm.limpiarError()
+                    // Limpiamos los campos al cambiar de modo para que no se vean rojos
+                    nombre = ""
+                    email = ""
+                    contra = ""
                 }
             ) {
                 Text(if (esLogin) "¿No tienes cuenta? Regístrate aquí" else "¿Ya tienes cuenta? Inicia sesión")

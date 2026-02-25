@@ -1,5 +1,6 @@
 package com.example.back2life.data.repo
 
+import android.util.Log
 import com.example.back2life.data.model.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,19 +14,18 @@ class AuthRepository(
     val currentUser get() = auth.currentUser
 
     suspend fun registrar(email: String, password: String, nombre: String) {
-        // 1. Crear usuario en Authentication
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
-        val uid = authResult.user?.uid ?: throw Exception("No se pudo obtener el ID del usuario")
+        val uid = authResult.user?.uid ?: throw Exception("No se pudo obtener el ID")
 
         val perfil = UserProfile(uid = uid, nombre = nombre, email = email)
 
-        // 2. Intentar guardar en Firestore con un límite de 5 segundos
         val exito = withTimeoutOrNull(5000) {
             db.collection("usuarios").document(uid).set(perfil).await()
-            true // Retorna true si lo logró a tiempo
+            true
         }
 
         if (exito == null) {
+            authResult.user?.delete()?.await()
             throw Exception("La base de datos no responde.")
         }
     }
@@ -44,5 +44,11 @@ class AuthRepository(
                 doc.toObject(UserProfile::class.java)
             }
         } catch (e: Exception) { null }
+    }
+
+    // NUEVA FUNCIÓN: Actualiza el nombre en Firebase
+    suspend fun actualizarNombre(nuevoNombre: String) {
+        val uid = currentUser?.uid ?: throw Exception("No hay sesión")
+        db.collection("usuarios").document(uid).update("nombre", nuevoNombre).await()
     }
 }

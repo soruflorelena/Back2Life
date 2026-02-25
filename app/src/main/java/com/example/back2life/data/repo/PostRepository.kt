@@ -8,20 +8,13 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
-class PostRepository(
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
+class PostRepository(private val db: FirebaseFirestore = FirebaseFirestore.getInstance()) {
     private val postsCol get() = db.collection("posts")
 
     suspend fun crearPost(post: Post): String {
         val now = Timestamp.now()
         val doc = postsCol.document()
-        val data = post.copy(
-            id = doc.id,
-            creado = now,
-            actualizado = now
-        )
-        doc.set(data).await()
+        doc.set(post.copy(id = doc.id, creado = now, actualizado = now)).await()
         return doc.id
     }
 
@@ -34,42 +27,34 @@ class PostRepository(
     }
 
     suspend fun getFeed(): List<Post> {
-        val snap = postsCol
-            .orderBy("creado", Query.Direction.DESCENDING)
-            .limit(50)
-            .get()
-            .await()
+        val snap = postsCol.orderBy("creado", Query.Direction.DESCENDING).limit(50).get().await()
+        return snap.documents.mapNotNull { d -> d.toObject(Post::class.java)?.copy(id = d.id) }
+    }
 
-        // Firestore guarda enums como String (name)
-        return snap.documents.mapNotNull { d ->
-            val base = d.toObject(Post::class.java) ?: return@mapNotNull null
-            base.copy(id = d.id)
-        }
+    // NUEVA FUNCIÓN: Trae solo las publicaciones del usuario actual
+    suspend fun getMisPosts(userId: String): List<Post> {
+        val snap = postsCol.whereEqualTo("autorId", userId).get().await()
+        val posts = snap.documents.mapNotNull { d -> d.toObject(Post::class.java)?.copy(id = d.id) }
+        // Las ordenamos aquí para evitar que Firebase nos pida crear índices complejos
+        return posts.sortedByDescending { it.creado }
     }
 
     suspend fun getPost(postId: String): Post? {
         val d = postsCol.document(postId).get().await()
-        val base = d.toObject(Post::class.java) ?: return null
-        return base.copy(id = d.id)
-    }
-
-    suspend fun addComentario(postId: String, comentario: Comentario) {
-        val now = Timestamp.now()
-        val doc = postsCol.document(postId).collection("comentarios").document()
-        doc.set(comentario.copy(id = doc.id, postId = postId, creado = now)).await()
-    }
-
-    suspend fun getComentario(postId: String): List<Comentario> {
-        val snap = postsCol.document(postId)
-            .collection("comentarios")
-            .orderBy("creado", Query.Direction.ASCENDING)
-            .get()
-            .await()
-
-        return snap.documents.mapNotNull { it.toObject(Comentario::class.java) }
+        return d.toObject(Post::class.java)?.copy(id = d.id)
     }
 
     suspend fun borrarPost(postId: String) {
         postsCol.document(postId).delete().await()
+    }
+
+    suspend fun addComentario(postId: String, comentario: Comentario) {
+        val doc = postsCol.document(postId).collection("comentarios").document()
+        doc.set(comentario.copy(id = doc.id, creado = Timestamp.now())).await()
+    }
+
+    suspend fun getComentario(postId: String): List<Comentario> {
+        val snap = postsCol.document(postId).collection("comentarios").orderBy("creado", Query.Direction.ASCENDING).get().await()
+        return snap.documents.mapNotNull { d -> d.toObject(Comentario::class.java)?.copy(id = d.id) }
     }
 }

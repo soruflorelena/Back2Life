@@ -3,7 +3,7 @@ package com.example.back2life.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.back2life.data.model.Post
-import com.example.back2life.data.repo.AuthRepository
+import com.example.back2life.data.model.PostType
 import com.example.back2life.data.repo.PostRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,25 +11,49 @@ import kotlinx.coroutines.launch
 
 data class FeedEstado(
     val cargando: Boolean = false,
-    val posts: List<Post> = emptyList(),
+    val postsOriginales: List<Post> = emptyList(), // Los que están "Disponibles"
+    val postsFiltrados: List<Post> = emptyList(),  // Los que coinciden con el filtro
+    val filtroActual: String = "Todos",            // "Todos", "COMIDA", "MEDICINA"
     val error: String? = null
 )
 
-class FeedViewModel(
-    private val repo: PostRepository = PostRepository(),
-    private val authRepo: AuthRepository = AuthRepository()
-) : ViewModel() {
+class FeedViewModel(private val repo: PostRepository = PostRepository()) : ViewModel() {
     private val _estado = MutableStateFlow(FeedEstado())
     val estado = _estado.asStateFlow()
 
     fun cargar() = viewModelScope.launch {
-        _estado.value = _estado.value.copy(cargando = true, error = null)
+        _estado.value = _estado.value.copy(cargando = true)
         runCatching { repo.getFeed() }
-            .onSuccess { _estado.value = FeedEstado(posts = it) }
-            .onFailure { _estado.value = FeedEstado(error = it.message) }
+            .onSuccess { posts ->
+                // REGLA DE ORO: Filtramos para que SOLO pasen los que están "DISPONIBLE"
+                val disponibles = posts.filter { it.estado.name == "DISPONIBLE" }
+
+                _estado.value = _estado.value.copy(
+                    cargando = false,
+                    postsOriginales = disponibles,
+                    // Aplicamos el filtro que esté seleccionado actualmente
+                    postsFiltrados = aplicarFiltro(disponibles, _estado.value.filtroActual)
+                )
+            }
+            .onFailure {
+                _estado.value = _estado.value.copy(cargando = false, error = it.message)
+            }
     }
 
-    fun cerrarSesion() {
-        authRepo.logout()
+    // Función para cuando el usuario hace clic en los botones de "Comida" o "Medicina"
+    fun cambiarFiltro(nuevoFiltro: String) {
+        val filtrados = aplicarFiltro(_estado.value.postsOriginales, nuevoFiltro)
+        _estado.value = _estado.value.copy(
+            filtroActual = nuevoFiltro,
+            postsFiltrados = filtrados
+        )
+    }
+
+    private fun aplicarFiltro(posts: List<Post>, filtro: String): List<Post> {
+        return when (filtro) {
+            "COMIDA" -> posts.filter { it.tipo == PostType.COMIDA }
+            "MEDICINA" -> posts.filter { it.tipo == PostType.MEDICINA }
+            else -> posts // Si es "Todos", pasamos la lista completa
+        }
     }
 }

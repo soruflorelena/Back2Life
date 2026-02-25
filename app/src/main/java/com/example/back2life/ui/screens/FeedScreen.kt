@@ -5,116 +5,161 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import com.example.back2life.ui.viewmodel.FeedViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
-    onCreate: () -> Unit,
-    onOpen: (String) -> Unit,
-    onProfile: () -> Unit,
-    vm: FeedViewModel = FeedViewModel()
+    onNavigateToCreate: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onOpen: (String) -> Unit
 ) {
+    val vm = remember { FeedViewModel() }
     val estado by vm.estado.collectAsState()
 
+    // Carga los datos cada vez que entras a la pantalla
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Publicaciones", fontWeight = FontWeight.Bold) },
+                title = { Text("Back 2 Life", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 actions = {
-                    IconButton(onClick = onProfile) {
+                    IconButton(onClick = onNavigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil")
                     }
                 }
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreate,
+            FloatingActionButton(
+                onClick = onNavigateToCreate,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Text("Nueva Publicación")
-            }
+            ) { Icon(Icons.Default.Add, contentDescription = "Crear publicación") }
         }
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
+        Column(Modifier.padding(padding).fillMaxSize()) {
 
-            if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
-            if (!estado.cargando && estado.posts.isEmpty()) {
-                Text("Aún no hay publicaciones.",
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.secondary)
-            }
-            if (estado.error != null) Text(estado.error!!, color = MaterialTheme.colorScheme.error)
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+            // --- BARRA DE FILTROS ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(estado.posts) { post ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable { onOpen(post.id) },
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = post.titulo,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    text = if (post.precio <= 0) "GRATIS" else "$${post.precio}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                            }
+                FilterChip(
+                    selected = estado.filtroActual == "Todos",
+                    onClick = { vm.cambiarFiltro("Todos") },
+                    label = { Text("Todos") }
+                )
+                FilterChip(
+                    selected = estado.filtroActual == "COMIDA",
+                    onClick = { vm.cambiarFiltro("COMIDA") },
+                    label = { Text("Comida") }
+                )
+                FilterChip(
+                    selected = estado.filtroActual == "MEDICINA",
+                    onClick = { vm.cambiarFiltro("MEDICINA") },
+                    label = { Text("Medicina") }
+                )
+            }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = post.descripcion,
-                                maxLines = 2,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+            if (estado.cargando) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (estado.postsFiltrados.isEmpty()) {
+                // PANTALLA VACÍA: Si no hay publicaciones disponibles con el filtro actual
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No hay publicaciones disponibles",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                // LISTA DE PUBLICACIONES
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(estado.postsFiltrados) { post ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .clickable { onOpen(post.id) },
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = post.titulo,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (post.precio <= 0) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                                            contentColor = androidx.compose.ui.graphics.Color.White
+                                        ) {
+                                            Text(
+                                                text = "DONACIÓN",
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                                fontWeight = FontWeight.ExtraBold,
+                                                style = MaterialTheme.typography.labelMedium
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = "$${post.precio} MXN",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
 
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                val tipoFormato = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "$tipoFormato",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.secondary
+                                    text = post.descripcion,
+                                    maxLines = 2,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(
-                                    text = post.lugar,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    val tipoFormateado = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
+                                    Text(text = "$tipoFormateado", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                                    Text(text = "${post.lugar}", style = MaterialTheme.typography.labelMedium)
+                                }
                             }
                         }
                     }

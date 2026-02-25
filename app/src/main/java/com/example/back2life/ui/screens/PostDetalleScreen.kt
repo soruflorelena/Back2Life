@@ -16,16 +16,20 @@ import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewModel = PostDetalleViewModel()) {
+fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
+    // SOLUCIÓN 1: Evitamos que el ViewModel se recargue "glitcheando" la pantalla
+    val vm = remember { PostDetalleViewModel() }
+
     val estado by vm.estado.collectAsState()
     var commentText by remember { mutableStateOf("") }
-
-    // Controla si se muestra o no la ventana de edición
     var mostrarDialogoEdicion by remember { mutableStateOf(false) }
 
-    LaunchedEffect(postId) { vm.cargar(postId) }
+    // Se carga la info solo la primera vez que se abre la pantalla
+    LaunchedEffect(postId) {
+        vm.cargar(postId)
+    }
 
-    // Si Firebase confirma que se borró, nos salimos de esta pantalla automáticamente
+    // Si Firebase confirma que se borró, regresamos al Feed
     LaunchedEffect(estado.fueEliminado) {
         if (estado.fueEliminado) onBack()
     }
@@ -33,22 +37,24 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewMod
     Scaffold(
         topBar = { TopAppBar(title = { Text("Detalle") }, navigationIcon = { TextButton(onClick = onBack) { Text("Atrás") } }) },
         bottomBar = {
-            BottomAppBar(containerColor = MaterialTheme.colorScheme.surface) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = commentText,
-                        onValueChange = { commentText = it },
-                        placeholder = { Text("Escribe un mensaje...") },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(24.dp)
-                    )
-                    IconButton(onClick = {
-                        if (commentText.isNotBlank()) {
-                            vm.addComentario(postId, commentText)
-                            commentText = ""
+            if (estado.post != null) { // Solo mostrar barra de chat si el post existe
+                BottomAppBar(containerColor = MaterialTheme.colorScheme.surface) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = commentText,
+                            onValueChange = { commentText = it },
+                            placeholder = { Text("Escribe un mensaje...") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        IconButton(onClick = {
+                            if (commentText.isNotBlank()) {
+                                vm.addComentario(postId, commentText)
+                                commentText = ""
+                            }
+                        }) {
+                            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
                         }
-                    }) {
-                        Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -56,8 +62,25 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewMod
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
             val post = estado.post
+
+            // SOLUCIÓN 2: Manejo visible de estados (Cargando y Errores)
             if (post == null) {
-                if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (estado.cargando) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Cargando detalles...")
+                    } else if (estado.error != null) {
+                        Text("Ocurrió un error:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                        Text(estado.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                    } else {
+                        Text("No se encontró la publicación.")
+                    }
+                }
                 return@Column
             }
 
@@ -100,7 +123,6 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewMod
                     val estadoFormat = post.estado.name.lowercase().replaceFirstChar { it.uppercase() }
                     Text("Estado: $estadoFormat", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
 
-                    // PANEL DE CONTROL DEL CREADOR
                     if (vm.esAutor()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Acciones del creador:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -163,7 +185,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewMod
             var editPrecio by remember { mutableStateOf(estado.post!!.precio.toString()) }
 
             AlertDialog(
-                onDismissRequest = { mostrarDialogoEdicion = false }, // Se cierra si tocas afuera
+                onDismissRequest = { mostrarDialogoEdicion = false },
                 title = { Text("Editar Publicación") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -175,8 +197,8 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewMod
                 confirmButton = {
                     Button(onClick = {
                         val p = editPrecio.toDoubleOrNull() ?: 0.0
-                        vm.editarPost(postId, editTitulo, editDesc, p) // Guarda en Firebase
-                        mostrarDialogoEdicion = false // Cierra la ventana
+                        vm.editarPost(postId, editTitulo, editDesc, p)
+                        mostrarDialogoEdicion = false
                     }) { Text("Guardar") }
                 },
                 dismissButton = {
