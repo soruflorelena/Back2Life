@@ -105,9 +105,9 @@ fun FeedScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                val tipoFormateado = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
+                                val tipoFormato = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
                                 Text(
-                                    text = "$tipoFormateado",
+                                    text = "$tipoFormato",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.secondary
                                 )
