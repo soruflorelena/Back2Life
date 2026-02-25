@@ -68,4 +68,8 @@ class PostRepository(
 
         return snap.documents.mapNotNull { it.toObject(Comentario::class.java) }
     }
+
+    suspend fun borrarPost(postId: String) {
+        postsCol.document(postId).delete().await()
+    }
 }

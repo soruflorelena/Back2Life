@@ -14,7 +14,8 @@ data class PostDetalleEstado(
     val cargando: Boolean = false,
     val post: Post? = null,
     val comentarios: List<Comentario> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val fueEliminado: Boolean = false // <-- Para saber si debemos cerrar la pantalla
 )
 
 class PostDetalleViewModel(
@@ -52,12 +53,34 @@ class PostDetalleViewModel(
     }
 
     fun marcarEntregado(postId: String) = viewModelScope.launch {
-        runCatching { postRepo.marcarEntregado(postId) }
-            .onSuccess { cargar(postId) }
+        runCatching { postRepo.marcarEntregado(postId) }.onSuccess { cargar(postId) }
+    }
+
+    // NUEVO: Eliminar post y avisarle a la pantalla
+    fun eliminarPost(postId: String) = viewModelScope.launch {
+        _estado.value = _estado.value.copy(cargando = true)
+        runCatching { postRepo.borrarPost(postId) }
+            .onSuccess { _estado.value = _estado.value.copy(fueEliminado = true) }
+            .onFailure { _estado.value = _estado.value.copy(cargando = false, error = it.message) }
+    }
+
+    // NUEVO: Actualizar los datos en Firebase y recargar
+    fun editarPost(postId: String, titulo: String, descripcion: String, precio: Double) = viewModelScope.launch {
+        _estado.value = _estado.value.copy(cargando = true)
+        runCatching {
+            postRepo.actualizarPost(postId, mapOf(
+                "titulo" to titulo.trim(),
+                "descripcion" to descripcion.trim(),
+                "precio" to precio
+            ))
+        }.onSuccess { cargar(postId) } // Recargamos para ver los cambios
     }
 
     fun esAutor(): Boolean {
         val uid = authRepo.currentUser?.uid ?: return false
         return _estado.value.post?.autorId == uid
     }
+
+    // Necesario para que las burbujas de chat se acomoden izquierda/derecha
+    fun currentUserId() = authRepo.currentUser?.uid
 }

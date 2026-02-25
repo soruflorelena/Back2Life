@@ -4,8 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -13,82 +16,173 @@ import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostDetalleScreen(
-    postId: String,
-    onBack: () -> Unit,
-    vm: PostDetalleViewModel = PostDetalleViewModel()
-) {
+fun PostDetalleScreen(postId: String, onBack: () -> Unit, vm: PostDetalleViewModel = PostDetalleViewModel()) {
     val estado by vm.estado.collectAsState()
     var commentText by remember { mutableStateOf("") }
 
+    // Controla si se muestra o no la ventana de edición
+    var mostrarDialogoEdicion by remember { mutableStateOf(false) }
+
     LaunchedEffect(postId) { vm.cargar(postId) }
 
+    // Si Firebase confirma que se borró, nos salimos de esta pantalla automáticamente
+    LaunchedEffect(estado.fueEliminado) {
+        if (estado.fueEliminado) onBack()
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Detalle") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Atrás") } }
-            )
+        topBar = { TopAppBar(title = { Text("Detalle") }, navigationIcon = { TextButton(onClick = onBack) { Text("Atrás") } }) },
+        bottomBar = {
+            BottomAppBar(containerColor = MaterialTheme.colorScheme.surface) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        placeholder = { Text("Escribe un mensaje...") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                    IconButton(onClick = {
+                        if (commentText.isNotBlank()) {
+                            vm.addComentario(postId, commentText)
+                            commentText = ""
+                        }
+                    }) {
+                        Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
         }
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
+        Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
             val post = estado.post
             if (post == null) {
                 if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
-                if (estado.error != null) Text(estado.error!!, color = MaterialTheme.colorScheme.error)
                 return@Column
             }
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(post.titulo, style = MaterialTheme.typography.titleLarge)
-                    Text(post.descripcion)
-                    Text("Tipo: ${post.tipo}")
-                    Text("Lugar: ${post.lugar}")
-                    Text("Precio: ${post.precio}")
-                    Text("Estado: ${post.estado}")
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(post.titulo, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
 
+                        if (post.precio <= 0) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                                contentColor = androidx.compose.ui.graphics.Color.White
+                            ) {
+                                Text("DONACIÓN", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelLarge)
+                            }
+                        } else {
+                            Text("$${post.precio} MXN", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Text(post.descripcion, style = MaterialTheme.typography.bodyLarge)
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+
+                    val tipoFormat = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
+                    Text("Categoría: $tipoFormat", style = MaterialTheme.typography.bodyMedium)
+                    Text("Lugar: ${post.lugar}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Caduca: ${post.fechaExp}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+
+                    val estadoFormat = post.estado.name.lowercase().replaceFirstChar { it.uppercase() }
+                    Text("Estado: $estadoFormat", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+
+                    // PANEL DE CONTROL DEL CREADOR
                     if (vm.esAutor()) {
-                        Button(onClick = { vm.marcarEntregado(postId) }) {
-                            Text("Marcar como entregada")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Acciones del creador:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+
+                        if (post.estado.name == "DISPONIBLE") {
+                            Button(
+                                onClick = { vm.marcarEntregado(postId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("Marcar como Entregada") }
+                        }
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { mostrarDialogoEdicion = true },
+                                modifier = Modifier.weight(1f)
+                            ) { Text("Editar") }
+
+                            OutlinedButton(
+                                onClick = { vm.eliminarPost(postId) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) { Text("Eliminar") }
                         }
                     }
                 }
             }
-
-            Text("Comentarios", style = MaterialTheme.typography.titleMedium)
-
-            OutlinedTextField(
-                value = commentText,
-                onValueChange = { commentText = it },
-                label = { Text("Escribe un comentario") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Button(
-                onClick = {
-                    if (commentText.isNotBlank()) {
-                        vm.addComentario(postId, commentText)
-                        commentText = ""
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("Enviar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                 items(estado.comentarios) { c ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text(c.autorNombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Text(c.texto)
+                    val isMyComment = c.autorId == vm.currentUserId()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = if (isMyComment) Arrangement.End else Arrangement.Start
+                    ) {
+                        Card(
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp, topEnd = 16.dp,
+                                bottomStart = if (isMyComment) 16.dp else 0.dp,
+                                bottomEnd = if (isMyComment) 0.dp else 16.dp
+                            ),
+                            colors = CardDefaults.cardColors(containerColor = if (isMyComment) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
+                            modifier = Modifier.widthIn(max = 280.dp)
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(c.autorNombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(c.texto, style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // --- VENTANA EMERGENTE PARA EDITAR ---
+        if (mostrarDialogoEdicion && estado.post != null) {
+            var editTitulo by remember { mutableStateOf(estado.post!!.titulo) }
+            var editDesc by remember { mutableStateOf(estado.post!!.descripcion) }
+            var editPrecio by remember { mutableStateOf(estado.post!!.precio.toString()) }
+
+            AlertDialog(
+                onDismissRequest = { mostrarDialogoEdicion = false }, // Se cierra si tocas afuera
+                title = { Text("Editar Publicación") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = editTitulo, onValueChange = { editTitulo = it }, label = { Text("Título") }, singleLine = true)
+                        OutlinedTextField(value = editDesc, onValueChange = { editDesc = it }, label = { Text("Descripción") }, minLines = 2)
+                        OutlinedTextField(value = editPrecio, onValueChange = { editPrecio = it }, label = { Text("Precio (0 = Donación)") }, singleLine = true)
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val p = editPrecio.toDoubleOrNull() ?: 0.0
+                        vm.editarPost(postId, editTitulo, editDesc, p) // Guarda en Firebase
+                        mostrarDialogoEdicion = false // Cierra la ventana
+                    }) { Text("Guardar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarDialogoEdicion = false }) { Text("Cancelar") }
+                }
+            )
         }
     }
 }
