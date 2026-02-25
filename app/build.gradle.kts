@@ -66,14 +66,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")
-
-    // 1. AGREGAR: Firebase Authentication y Firestore (Soluciona errores en AuthRepository y PostRepository)
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-
-    // 2. AGREGAR: Coroutines de Play Services (Soluciona los errores de .await() en Firebase)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
-
-    // 3. AGREGAR: Navigation de Jetpack Compose (Soluciona los errores en AppNav.kt)
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("com.google.firebase:firebase-storage")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
