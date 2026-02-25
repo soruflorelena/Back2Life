@@ -26,7 +26,6 @@ fun FeedScreen(
     val vm = remember { FeedViewModel() }
     val estado by vm.estado.collectAsState()
 
-    // Carga los datos
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
