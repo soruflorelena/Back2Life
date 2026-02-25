@@ -41,7 +41,7 @@ class PerfilViewModel(
             runCatching {
                 authRepo.actualizarNombre(nuevoNombre.trim())
             }.onSuccess {
-                cargarDatos() // Recargamos para ver el cambio
+                cargarDatos()
             }
         }
     }

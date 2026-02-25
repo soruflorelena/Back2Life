@@ -21,7 +21,7 @@ import com.example.back2life.ui.viewmodel.PerfilViewModel
 fun PerfilScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
-    onOpen: (String) -> Unit // <-- Necesario para abrir tus posts
+    onOpen: (String) -> Unit
 ) {
     val vm = remember { PerfilViewModel() }
     val estado by vm.estado.collectAsState()
@@ -34,7 +34,7 @@ fun PerfilScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
 
-            // --- CABECERA DEL PERFIL ---
+            // Cabecera del perfil
             Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.AccountCircle, contentDescription = "Avatar", modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -62,7 +62,7 @@ fun PerfilScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text("Mis Publicaciones", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
-            // --- LISTA DE TUS POSTS ---
+            // Lista de publicaciones
             if (!estado.cargando && estado.misPosts.isEmpty()) {
                 Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Aún no tienes publicaciones.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -97,7 +97,7 @@ fun PerfilScreen(
             }
         }
 
-        // --- VENTANA EMERGENTE PARA EDITAR NOMBRE ---
+        // Editar nombre ventana
         if (mostrarDialogoEdicion && estado.perfil != null) {
             var editNombre by remember { mutableStateOf(estado.perfil!!.nombre) }
             AlertDialog(

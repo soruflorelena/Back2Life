@@ -15,7 +15,7 @@ data class PostDetalleEstado(
     val post: Post? = null,
     val comentarios: List<Comentario> = emptyList(),
     val error: String? = null,
-    val fueEliminado: Boolean = false // <-- Para saber si debemos cerrar la pantalla
+    val fueEliminado: Boolean = false
 )
 
 class PostDetalleViewModel(
@@ -39,6 +39,7 @@ class PostDetalleViewModel(
         }
     }
 
+    // Añadir un comentario
     fun addComentario(postId: String, text: String) = viewModelScope.launch {
         val uid = authRepo.currentUser?.uid ?: return@launch
         val perfil = authRepo.obtenerPerfilActual()
@@ -52,11 +53,12 @@ class PostDetalleViewModel(
         }
     }
 
+    // Marcar Post como entregado
     fun marcarEntregado(postId: String) = viewModelScope.launch {
         runCatching { postRepo.marcarEntregado(postId) }.onSuccess { cargar(postId) }
     }
 
-    // NUEVO: Eliminar post y avisarle a la pantalla
+    // Eliminar post
     fun eliminarPost(postId: String) = viewModelScope.launch {
         _estado.value = _estado.value.copy(cargando = true)
         runCatching { postRepo.borrarPost(postId) }
@@ -64,7 +66,7 @@ class PostDetalleViewModel(
             .onFailure { _estado.value = _estado.value.copy(cargando = false, error = it.message) }
     }
 
-    // NUEVO: Actualizar los datos en Firebase y recargar
+    // Editar Post
     fun editarPost(postId: String, titulo: String, descripcion: String, precio: Double) = viewModelScope.launch {
         _estado.value = _estado.value.copy(cargando = true)
         runCatching {
@@ -73,14 +75,12 @@ class PostDetalleViewModel(
                 "descripcion" to descripcion.trim(),
                 "precio" to precio
             ))
-        }.onSuccess { cargar(postId) } // Recargamos para ver los cambios
+        }.onSuccess { cargar(postId) }
     }
 
     fun esAutor(): Boolean {
         val uid = authRepo.currentUser?.uid ?: return false
         return _estado.value.post?.autorId == uid
     }
-
-    // Necesario para que las burbujas de chat se acomoden izquierda/derecha
     fun currentUserId() = authRepo.currentUser?.uid
 }

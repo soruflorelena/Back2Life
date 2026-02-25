@@ -15,16 +15,11 @@ import com.example.back2life.ui.viewmodel.AuthViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Instanciamos el ViewModel de Autenticación para saber si hay sesión iniciada
         val authVm = AuthViewModel()
-
         setContent {
-            Back2LifeTheme { // Aplicamos tu tema visual
+            Back2LifeTheme {
                 val estado by authVm.state.collectAsState()
-
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    // Si el usuario ya está logueado, lo mandamos al Feed, si no, al Login
                     AppNav(start = if (estado.esLogueado) Ruta.Feed.camino else Ruta.Auth.camino)
                 }
             }

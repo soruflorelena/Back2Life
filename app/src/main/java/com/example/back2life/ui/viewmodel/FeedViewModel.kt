@@ -11,9 +11,9 @@ import kotlinx.coroutines.launch
 
 data class FeedEstado(
     val cargando: Boolean = false,
-    val postsOriginales: List<Post> = emptyList(), // Los que están "Disponibles"
-    val postsFiltrados: List<Post> = emptyList(),  // Los que coinciden con el filtro
-    val filtroActual: String = "Todos",            // "Todos", "COMIDA", "MEDICINA"
+    val postsOriginales: List<Post> = emptyList(),
+    val postsFiltrados: List<Post> = emptyList(),
+    val filtroActual: String = "Todos",
     val error: String? = null
 )
 
@@ -21,17 +21,16 @@ class FeedViewModel(private val repo: PostRepository = PostRepository()) : ViewM
     private val _estado = MutableStateFlow(FeedEstado())
     val estado = _estado.asStateFlow()
 
+    // Cagar los Posts
     fun cargar() = viewModelScope.launch {
         _estado.value = _estado.value.copy(cargando = true)
         runCatching { repo.getFeed() }
             .onSuccess { posts ->
-                // REGLA DE ORO: Filtramos para que SOLO pasen los que están "DISPONIBLE"
                 val disponibles = posts.filter { it.estado.name == "DISPONIBLE" }
 
                 _estado.value = _estado.value.copy(
                     cargando = false,
                     postsOriginales = disponibles,
-                    // Aplicamos el filtro que esté seleccionado actualmente
                     postsFiltrados = aplicarFiltro(disponibles, _estado.value.filtroActual)
                 )
             }
@@ -40,7 +39,7 @@ class FeedViewModel(private val repo: PostRepository = PostRepository()) : ViewM
             }
     }
 
-    // Función para cuando el usuario hace clic en los botones de "Comida" o "Medicina"
+    // Función para cambiar el filtro
     fun cambiarFiltro(nuevoFiltro: String) {
         val filtrados = aplicarFiltro(_estado.value.postsOriginales, nuevoFiltro)
         _estado.value = _estado.value.copy(
@@ -49,11 +48,12 @@ class FeedViewModel(private val repo: PostRepository = PostRepository()) : ViewM
         )
     }
 
+    // Aplicar el filtro
     private fun aplicarFiltro(posts: List<Post>, filtro: String): List<Post> {
         return when (filtro) {
             "COMIDA" -> posts.filter { it.tipo == PostType.COMIDA }
             "MEDICINA" -> posts.filter { it.tipo == PostType.MEDICINA }
-            else -> posts // Si es "Todos", pasamos la lista completa
+            else -> posts
         }
     }
 }

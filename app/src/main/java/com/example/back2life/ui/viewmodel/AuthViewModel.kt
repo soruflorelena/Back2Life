@@ -23,6 +23,7 @@ class AuthViewModel(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
+    // Función para registrar
     fun registrar(email: String, contra: String, nombre: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (nombre.trim().isEmpty()) {
             _state.value = AuthEstado(error = "Ingresa tu nombre completo")
@@ -46,6 +47,7 @@ class AuthViewModel(
             .onFailure { _state.value = AuthEstado(error = traducirError(it)) }
     }
 
+    // Función para iniciar sesión
     fun login(email: String, contra: String, onSuccess: () -> Unit) = viewModelScope.launch {
         if (!esEmailValido(email)) {
             _state.value = AuthEstado(error = "El formato del correo no es válido")

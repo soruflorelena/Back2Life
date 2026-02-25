@@ -38,5 +38,5 @@ enum class PostType {
 }
 
 enum class PostStatus {
-    DISPONIBLE, ENTREGADA, EXPIRADA
+    DISPONIBLE, ENTREGADA
 }

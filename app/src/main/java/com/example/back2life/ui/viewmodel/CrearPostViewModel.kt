@@ -23,6 +23,7 @@ class CrearPostViewModel(
     private val _estado = MutableStateFlow(CrearPostEstado())
     val estado = _estado.asStateFlow()
 
+    // Crear Post
     fun create(
         titulo: String,
         descripcion: String,

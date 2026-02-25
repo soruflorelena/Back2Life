@@ -22,7 +22,6 @@ fun AppNavHost(nav: NavHostController, start: String) {
             AuthScreen(onAuthed = { nav.navigate(Ruta.Feed.camino) { popUpTo(Ruta.Auth.camino) { inclusive = true } } })
         }
 
-        // AQUÍ ESTABA EL ERROR: Ya están los nombres correctos
         composable(route = Ruta.Feed.camino) {
             FeedScreen(
                 onNavigateToCreate = { nav.navigate(Ruta.CrearPost.camino) },

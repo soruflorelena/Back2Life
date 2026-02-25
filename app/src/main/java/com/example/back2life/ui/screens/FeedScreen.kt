@@ -26,7 +26,7 @@ fun FeedScreen(
     val vm = remember { FeedViewModel() }
     val estado by vm.estado.collectAsState()
 
-    // Carga los datos cada vez que entras a la pantalla
+    // Carga los datos
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
@@ -50,7 +50,7 @@ fun FeedScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
 
-            // --- BARRA DE FILTROS ---
+            // Barra de los filtros
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -79,7 +79,6 @@ fun FeedScreen(
                     CircularProgressIndicator()
                 }
             } else if (estado.postsFiltrados.isEmpty()) {
-                // PANTALLA VACÍA: Si no hay publicaciones disponibles con el filtro actual
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -93,7 +92,6 @@ fun FeedScreen(
                     )
                 }
             } else {
-                // LISTA DE PUBLICACIONES
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -157,8 +155,8 @@ fun FeedScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     val tipoFormateado = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
-                                    Text(text = "$tipoFormateado", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-                                    Text(text = "${post.lugar}", style = MaterialTheme.typography.labelMedium)
+                                    Text(text = tipoFormateado, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                                    Text(text = post.lugar, style = MaterialTheme.typography.labelMedium)
                                 }
                             }
                         }

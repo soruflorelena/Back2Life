@@ -1,6 +1,5 @@
 package com.example.back2life.data.repo
 
-import android.util.Log
 import com.example.back2life.data.model.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,6 +12,7 @@ class AuthRepository(
 ) {
     val currentUser get() = auth.currentUser
 
+    // Registro
     suspend fun registrar(email: String, password: String, nombre: String) {
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
         val uid = authResult.user?.uid ?: throw Exception("No se pudo obtener el ID")
@@ -30,12 +30,15 @@ class AuthRepository(
         }
     }
 
+    // Login
     suspend fun login(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password).await()
     }
 
+    // Logout
     fun logout() = auth.signOut()
 
+    // Obtener perfil
     suspend fun obtenerPerfilActual(): UserProfile? {
         val uid = currentUser?.uid ?: return null
         return try {
@@ -46,7 +49,7 @@ class AuthRepository(
         } catch (e: Exception) { null }
     }
 
-    // NUEVA FUNCIÓN: Actualiza el nombre en Firebase
+    // Actualizar nombre en Firebase
     suspend fun actualizarNombre(nuevoNombre: String) {
         val uid = currentUser?.uid ?: throw Exception("No hay sesión")
         db.collection("usuarios").document(uid).update("nombre", nuevoNombre).await()

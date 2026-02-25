@@ -25,13 +25,12 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
     var contra by remember { mutableStateOf("") }
     var esLogin by remember { mutableStateOf(true) }
 
-    // VERIFICACIONES EN TIEMPO REAL
-    // Se actualizan solas cada vez que el usuario teclea una letra
+    // Verificar los datos ingresados
     val emailValido = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val contraValida = contra.length >= 6
     val nombreValido = nombre.trim().isNotEmpty()
 
-    // El botón solo se activará si el formulario está perfecto
+    // Activar el botón de registro cuando el formulario esté correcto
     val formularioValido = if (esLogin) {
         emailValido && contraValida
     } else {
@@ -49,13 +48,13 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
         Text("Back 2 Life", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
         Text(if (esLogin) "Bienvenido de nuevo" else "Crea una cuenta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 24.dp))
 
-        // CAMPO DE NOMBRE (Solo en registro)
+        // Campo de nombre en el registro
         if (!esLogin) {
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
                 label = { Text("Nombre completo") },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Ícono de usuario") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Usuario") },
                 isError = nombre.isNotEmpty() && !nombreValido,
                 supportingText = {
                     if (nombre.isNotEmpty() && !nombreValido) Text("El nombre no puede estar vacío")
@@ -66,18 +65,17 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
             )
         }
 
-        // CAMPO DE CORREO
+        // Campo de correo
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Correo electrónico") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Ícono de correo") },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Correo") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = email.isNotEmpty() && !emailValido, // Se pone rojo si está mal
+            isError = email.isNotEmpty() && !emailValido,
             supportingText = {
-                // Mensaje de ayuda que aparece abajo del campo
                 if (email.isNotEmpty() && !emailValido) {
-                    Text("Ingresa un correo válido (ej. usuario@correo.com)")
+                    Text("Ingresa un correo válido.")
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -85,18 +83,18 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
             shape = RoundedCornerShape(12.dp)
         )
 
-        // CAMPO DE CONTRASEÑA
+        // Campo de contraseña
         OutlinedTextField(
             value = contra,
             onValueChange = { contra = it },
             label = { Text("Contraseña") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Ícono de candado") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Candado") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             isError = contra.isNotEmpty() && !contraValida,
             supportingText = {
                 if (contra.isNotEmpty() && !contraValida) {
-                    Text("Debe tener al menos 6 caracteres")
+                    Text("Debe tener al menos 6 carácteres")
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -106,7 +104,6 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Mensaje de error de Firebase (ej. "El correo ya está registrado")
         if (estado.error != null) {
             Text(
                 text = estado.error!!,
@@ -124,7 +121,7 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
                     if (esLogin) vm.login(email, contra) { onAuthed() }
                     else vm.registrar(email, contra, nombre) { onAuthed() }
                 },
-                enabled = formularioValido, // <-- EL BOTÓN SE BLOQUEA SI HAY ERRORES
+                enabled = formularioValido,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -135,7 +132,6 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
                 onClick = {
                     esLogin = !esLogin
                     vm.limpiarError()
-                    // Limpiamos los campos al cambiar de modo para que no se vean rojos
                     nombre = ""
                     email = ""
                     contra = ""
