@@ -2,10 +2,12 @@ package com.example.back2life.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.data.model.PostType
 import com.example.back2life.ui.viewmodel.CrearPostViewModel
@@ -76,9 +78,12 @@ fun CrearPostScreen(
                     }
                 },
                 enabled = !estado.cargando,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (estado.cargando) "Publicando..." else "Publicar")
+                Text(if (estado.cargando) "Publicando..." else "Publicar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             }
         }
     }

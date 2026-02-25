@@ -40,8 +40,11 @@ class PostDetalleViewModel(
 
     fun addComentario(postId: String, text: String) = viewModelScope.launch {
         val uid = authRepo.currentUser?.uid ?: return@launch
+        val perfil = authRepo.obtenerPerfilActual()
+        val nombreUsuario = perfil?.nombre ?: "Usuario"
+
         runCatching {
-            postRepo.addComentario(postId, Comentario(autorId = uid, texto = text))
+            postRepo.addComentario(postId, Comentario(autorId = uid, autorNombre = nombreUsuario, texto = text))
             postRepo.getComentario(postId)
         }.onSuccess { updated ->
             _estado.value = _estado.value.copy(comentarios = updated)

@@ -3,6 +3,7 @@ package com.example.back2life.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -10,7 +11,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 
-// CORRECCIÓN: Se añade esta línea para permitir el uso de TopAppBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetalleScreen(
@@ -73,8 +73,11 @@ fun PostDetalleScreen(
                         commentText = ""
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Enviar") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("Enviar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                 items(estado.comentarios) { c ->

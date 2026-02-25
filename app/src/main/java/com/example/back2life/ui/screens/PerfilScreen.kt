@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.data.model.UserProfile
 import com.example.back2life.data.repo.AuthRepository
@@ -46,9 +47,11 @@ fun PerfilScreen(onBack: () -> Unit, onLogout: () -> Unit) {
 
             Button(
                 onClick = { authRepo.logout(); onLogout() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) { Text("Cerrar Sesión") }
+            ) { Text("Cerrar Sesión", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
         }
     }
 }

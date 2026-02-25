@@ -51,17 +51,25 @@ fun FeedScreen(
         Column(Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp)) {
 
             if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
+            if (!estado.cargando && estado.posts.isEmpty()) {
+                Text("Aún no hay publicaciones.",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.secondary)
+            }
             if (estado.error != null) Text(estado.error!!, color = MaterialTheme.colorScheme.error)
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp) // Espacio extra abajo para que el botón flotante no tape
+                contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
             ) {
                 items(estado.posts) { post ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { onOpen(post.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable { onOpen(post.id) },
                         shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(Modifier.padding(16.dp)) {
@@ -76,9 +84,8 @@ fun FeedScreen(
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.weight(1f)
                                 )
-                                // Mostrar un texto especial si es donación
                                 Text(
-                                    text = if (post.precio <= 0.0) "GRATIS" else "$${post.precio}",
+                                    text = if (post.precio <= 0) "GRATIS" else "$${post.precio}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.ExtraBold
@@ -86,31 +93,26 @@ fun FeedScreen(
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(post.descripcion, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = post.descripcion,
+                                maxLines = 2,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
 
                             Spacer(modifier = Modifier.height(12.dp))
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer
-                                ) {
-                                    Text(
-                                        text = post.tipo.name,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-
+                                Text(
+                                    text = "post.tipo",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
                                 Text(
                                     text = post.lugar,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = MaterialTheme.typography.labelMedium
                                 )
                             }
                         }

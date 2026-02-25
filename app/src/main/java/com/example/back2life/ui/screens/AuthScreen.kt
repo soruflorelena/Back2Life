@@ -1,6 +1,7 @@
 package com.example.back2life.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -68,6 +70,7 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
             isError = estado.error?.contains("contraseña", ignoreCase = true) == true || estado.error?.contains("caracteres", ignoreCase = true) == true,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
+
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -91,9 +94,12 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
                         vm.registrar(email, contra, nombre) { onAuthed() }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (esLogin) "Iniciar Sesión" else "Registrarme")
+                Text(if (esLogin) "Iniciar Sesión" else "Registrarme", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             }
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(
