@@ -25,37 +25,20 @@ class CrearPostViewModel(
 
     // Crear Post
     fun create(
-        titulo: String,
-        descripcion: String,
-        tipo: PostType,
-        precio: Double,
-        lugar: String,
-        fechaExp: String,
+        titulo: String, descripcion: String, tipo: PostType,
+        precio: Double, lugar: String, fechaExp: String,
+        fotoBase64: String, // <-- NUEVO PARÁMETRO
         onExito: (String) -> Unit
     ) = viewModelScope.launch {
-        val uid = authRepo.currentUser?.uid
-        if (uid == null) {
-            _estado.value = CrearPostEstado(error = "No hay sesión iniciada")
-            return@launch
-        }
-
-        if (titulo.isBlank() || descripcion.isBlank() || lugar.isBlank() || fechaExp.isBlank()) {
-            _estado.value = CrearPostEstado(error = "Por favor llena todos los campos")
-            return@launch
-        }
+        val uid = authRepo.currentUser?.uid ?: return@launch
 
         _estado.value = CrearPostEstado(cargando = true)
-
         runCatching {
             postRepo.crearPost(
                 Post(
-                    autorId = uid,
-                    titulo = titulo.trim(),
-                    descripcion = descripcion.trim(),
-                    tipo = tipo,
-                    precio = precio,
-                    lugar = lugar.trim(),
-                    fechaExp = fechaExp.trim()
+                    autorId = uid, titulo = titulo.trim(), descripcion = descripcion.trim(),
+                    tipo = tipo, precio = precio, lugar = lugar.trim(), fechaExp = fechaExp.trim(),
+                    fotoBase64 = fotoBase64
                 )
             )
         }.onSuccess { id ->

@@ -1,15 +1,20 @@
 package com.example.back2life.ui.screens
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.PostDetalleViewModel
@@ -18,13 +23,15 @@ import com.example.back2life.ui.viewmodel.PostDetalleViewModel
 @Composable
 fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
     val vm = remember { PostDetalleViewModel() }
-
     val estado by vm.estado.collectAsState()
+
     var commentText by remember { mutableStateOf("") }
     var mostrarDialogoEdicion by remember { mutableStateOf(false) }
+
     LaunchedEffect(postId) {
         vm.cargar(postId)
     }
+
     LaunchedEffect(estado.fueEliminado) {
         if (estado.fueEliminado) onBack()
     }
@@ -38,7 +45,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                         OutlinedTextField(
                             value = commentText,
                             onValueChange = { commentText = it },
-                            placeholder = { Text("Escribe un mensaje") },
+                            placeholder = { Text("Escribe un mensaje...") },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(24.dp)
                         )
@@ -48,7 +55,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                                 commentText = ""
                             }
                         }) {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -67,7 +74,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                     if (estado.cargando) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Cargando detalles")
+                        Text("Cargando detalles...")
                     } else if (estado.error != null) {
                         Text("Ocurrió un error:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                         Text(estado.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
@@ -85,6 +92,23 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                    // --- DECODIFICACIÓN DE LA IMAGEN EN DETALLES ---
+                    if (post.fotoBase64.isNotBlank() && post.fotoBase64.length > 100) {
+                        try {
+                            val imageBytes = Base64.decode(post.fotoBase64, Base64.DEFAULT)
+                            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            if (bitmap != null) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "Foto",
+                                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        } catch (e: Exception) { }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -110,12 +134,12 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
 
                     val tipoFormat = post.tipo.name.lowercase().replaceFirstChar { it.uppercase() }
-                    Text("Categoría: $tipoFormat", style = MaterialTheme.typography.bodyMedium)
-                    Text("Lugar: ${post.lugar}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Caduca: ${post.fechaExp}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    Text("📦 Categoría: $tipoFormat", style = MaterialTheme.typography.bodyMedium)
+                    Text("📍 Lugar: ${post.lugar}", style = MaterialTheme.typography.bodyMedium)
+                    Text("⏳ Caduca: ${post.fechaExp}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
 
                     val estadoFormat = post.estado.name.lowercase().replaceFirstChar { it.uppercase() }
-                    Text("Estado: $estadoFormat", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Text("📌 Estado: $estadoFormat", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
 
                     if (vm.esAutor()) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -145,6 +169,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
                 }
             }
 
+            // LISTA DE COMENTARIOS
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                 items(estado.comentarios) { c ->
                     val isMyComment = c.autorId == vm.currentUserId()
@@ -172,7 +197,7 @@ fun PostDetalleScreen(postId: String, onBack: () -> Unit) {
             }
         }
 
-        // Ventana para editar
+        // --- VENTANA EMERGENTE PARA EDITAR ---
         if (mostrarDialogoEdicion && estado.post != null) {
             var editTitulo by remember { mutableStateOf(estado.post!!.titulo) }
             var editDesc by remember { mutableStateOf(estado.post!!.descripcion) }

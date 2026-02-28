@@ -1,5 +1,8 @@
 package com.example.back2life.ui.screens
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,11 +10,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.back2life.ui.viewmodel.FeedViewModel
@@ -26,6 +32,7 @@ fun FeedScreen(
     val vm = remember { FeedViewModel() }
     val estado by vm.estado.collectAsState()
 
+    // Carga los datos cada vez que entras a la pantalla
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
@@ -49,7 +56,7 @@ fun FeedScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
 
-            // Barra de los filtros
+            // --- BARRA DE FILTROS ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,11 +85,18 @@ fun FeedScreen(
                     CircularProgressIndicator()
                 }
             } else if (estado.postsFiltrados.isEmpty()) {
+                // PANTALLA VACÍA: Si no hay publicaciones
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Sin publicaciones",
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.surfaceVariant
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "No hay publicaciones disponibles",
@@ -91,6 +105,7 @@ fun FeedScreen(
                     )
                 }
             } else {
+                // LISTA DE PUBLICACIONES
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -106,6 +121,24 @@ fun FeedScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Column(Modifier.padding(16.dp)) {
+
+                                // --- DECODIFICACIÓN Y RENDERIZADO DE LA IMAGEN ---
+                                if (post.fotoBase64.isNotBlank() && post.fotoBase64.length > 100) {
+                                    try {
+                                        val imageBytes = Base64.decode(post.fotoBase64, Base64.DEFAULT)
+                                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                        if (bitmap != null) {
+                                            Image(
+                                                bitmap = bitmap.asImageBitmap(),
+                                                contentDescription = "Foto",
+                                                modifier = Modifier.fillMaxWidth().height(180.dp),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                        }
+                                    } catch (e: Exception) { /* Ignorar error de desencriptación visual */ }
+                                }
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -165,4 +198,3 @@ fun FeedScreen(
         }
     }
 }
-

@@ -15,11 +15,11 @@ data class Post(
     val titulo: String = "",
     val descripcion: String = "",
     val tipo: PostType = PostType.COMIDA,
-    val fechaExp: String = "",
-    val estado: PostStatus = PostStatus.DISPONIBLE,
     val precio: Double = 0.0,
     val lugar: String = "",
-    val fotoUrl: String = "",
+    val fechaExp: String = "",
+    val estado: PostStatus = PostStatus.DISPONIBLE,
+    val fotoBase64: String = "",
     val creado: Timestamp? = null,
     val actualizado: Timestamp? = null
 )
