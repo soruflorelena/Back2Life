@@ -19,27 +19,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage // <-- IMPORTANTE: Requiere la librería Coil en tu build.gradle
+import coil.compose.AsyncImage
 import com.example.back2life.data.model.PostType
 import com.example.back2life.ui.viewmodel.CrearPostViewModel
 import java.io.ByteArrayOutputStream
+import androidx.core.graphics.scale
 
-// FUNCIÓN MÁGICA: Exprime la imagen y la convierte a texto Base64
-fun comprimirUriABase64(context: Context, uri: Uri): String {
+fun aBase64(context: Context, uri: Uri): String {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri)
         val original = BitmapFactory.decodeStream(inputStream)
-
-        // Redimensionamos la foto para que no rebase el límite de Firestore (1 MB)
-        val max = 500f // Tamaño máximo en píxeles (calidad de miniatura)
+        val max = 500f
         val ratio = original.width.toFloat() / original.height.toFloat()
         val width = if (ratio > 1) max.toInt() else (max * ratio).toInt()
         val height = if (ratio > 1) (max / ratio).toInt() else max.toInt()
 
-        val escalada = Bitmap.createScaledBitmap(original, width, height, true)
+        val escalada = original.scale(width, height)
 
         val outputStream = ByteArrayOutputStream()
-        // La comprimimos a formato JPEG con un 50% de calidad
         escalada.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
         val bytes = outputStream.toByteArray()
         Base64.encodeToString(bytes, Base64.NO_WRAP)
@@ -54,7 +51,7 @@ fun CrearPostScreen(
     vm: CrearPostViewModel = CrearPostViewModel()
 ) {
     val estado by vm.estado.collectAsState()
-    val context = LocalContext.current // Lo necesitamos para procesar la imagen
+    val context = LocalContext.current
 
     var titulo by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
@@ -63,7 +60,6 @@ fun CrearPostScreen(
     var fechaExpTexto by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(PostType.COMIDA) }
 
-    // VARIABLES PARA LA SELECCIÓN DE FOTO
     var imagenSeleccionada by remember { mutableStateOf<Uri?>(null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -87,7 +83,6 @@ fun CrearPostScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            // BOTÓN PARA SELECCIONAR FOTO
             Button(
                 onClick = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -95,8 +90,6 @@ fun CrearPostScreen(
             ) {
                 Text("Seleccionar una Foto")
             }
-
-            // VISTA PREVIA DE LA FOTO EN LA PANTALLA
             if (imagenSeleccionada != null) {
                 AsyncImage(
                     model = imagenSeleccionada,
@@ -106,11 +99,26 @@ fun CrearPostScreen(
                 )
             }
 
-            OutlinedTextField(titulo, { titulo = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(desc, { desc = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
-            OutlinedTextField(fechaExpTexto, { fechaExpTexto = it }, label = { Text("Fecha de caducidad (Ej. 12 Dic)") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(lugar, { lugar = it }, label = { Text("Lugar de entrega") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(precioTexto, { precioTexto = it }, label = { Text("Precio (0 = donación)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                titulo, { titulo = it },
+                label = { Text("Título") },
+                modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                desc, { desc = it },
+                label = { Text("Descripción") },
+                modifier = Modifier.fillMaxWidth(), minLines = 3)
+            OutlinedTextField(
+                fechaExpTexto, { fechaExpTexto = it },
+                label = { Text("Fecha de caducidad (Ej. 12 Dic)") },
+                modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                lugar, { lugar = it },
+                label = { Text("Lugar de entrega") },
+                modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                precioTexto, { precioTexto = it },
+                label = { Text("Precio (0 = donación)") },
+                modifier = Modifier.fillMaxWidth())
 
             Text("Categoría:", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -135,15 +143,12 @@ fun CrearPostScreen(
                 onClick = {
                     val precio = precioTexto.toDoubleOrNull() ?: 0.0
 
-                    // JUSTO AQUÍ: Exprimimos la foto a texto en el momento de darle click
-                    val base64String = imagenSeleccionada?.let { comprimirUriABase64(context, it) } ?: ""
-
-                    // Le pasamos la foto convertida a texto a tu ViewModel
+                    val base64String = imagenSeleccionada?.let { aBase64(context, it) } ?: ""
                     vm.create(titulo, desc, tipo, precio, lugar, fechaExpTexto, base64String) { postId ->
                         onCreated(postId)
                     }
                 },
-                enabled = !estado.cargando,
+                enabled = !estado.cargando && titulo.isNotBlank() && desc.isNotBlank() && lugar.isNotBlank() && fechaExpTexto.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {

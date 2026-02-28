@@ -27,9 +27,15 @@ class CrearPostViewModel(
     fun create(
         titulo: String, descripcion: String, tipo: PostType,
         precio: Double, lugar: String, fechaExp: String,
-        fotoBase64: String, // <-- NUEVO PARÁMETRO
+        fotoBase64: String,
         onExito: (String) -> Unit
+
     ) = viewModelScope.launch {
+        if (titulo.isBlank() || descripcion.isBlank() || lugar.isBlank() || fechaExp.isBlank()) {
+            _estado.value = CrearPostEstado(error = "Por favor, llena todos los campos")
+            return@launch
+        }
+
         val uid = authRepo.currentUser?.uid ?: return@launch
 
         _estado.value = CrearPostEstado(cargando = true)

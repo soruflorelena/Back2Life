@@ -30,7 +30,6 @@ fun AuthScreen(onAuthed: () -> Unit, vm: AuthViewModel = AuthViewModel()) {
     val contraValida = contra.length >= 6
     val nombreValido = nombre.trim().isNotEmpty()
 
-    // Activar el botón de registro cuando el formulario esté correcto
     val formularioValido = if (esLogin) {
         emailValido && contraValida
     } else {

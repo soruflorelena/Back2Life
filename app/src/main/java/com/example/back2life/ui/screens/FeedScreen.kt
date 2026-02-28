@@ -32,7 +32,7 @@ fun FeedScreen(
     val vm = remember { FeedViewModel() }
     val estado by vm.estado.collectAsState()
 
-    // Carga los datos cada vez que entras a la pantalla
+    // Carga los datos
     LaunchedEffect(Unit) { vm.cargar() }
 
     Scaffold(
@@ -56,7 +56,6 @@ fun FeedScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
 
-            // --- BARRA DE FILTROS ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,7 +84,6 @@ fun FeedScreen(
                     CircularProgressIndicator()
                 }
             } else if (estado.postsFiltrados.isEmpty()) {
-                // PANTALLA VACÍA: Si no hay publicaciones
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -105,7 +103,6 @@ fun FeedScreen(
                     )
                 }
             } else {
-                // LISTA DE PUBLICACIONES
                 LazyColumn(
                     contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -122,21 +119,22 @@ fun FeedScreen(
                         ) {
                             Column(Modifier.padding(16.dp)) {
 
-                                // --- DECODIFICACIÓN Y RENDERIZADO DE LA IMAGEN ---
                                 if (post.fotoBase64.isNotBlank() && post.fotoBase64.length > 100) {
-                                    try {
+                                    val decodedBitmap = try {
                                         val imageBytes = Base64.decode(post.fotoBase64, Base64.DEFAULT)
-                                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                                        if (bitmap != null) {
-                                            Image(
-                                                bitmap = bitmap.asImageBitmap(),
-                                                contentDescription = "Foto",
-                                                modifier = Modifier.fillMaxWidth().height(180.dp),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                        }
-                                    } catch (e: Exception) { /* Ignorar error de desencriptación visual */ }
+                                        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                    if (decodedBitmap != null) {
+                                        Image(
+                                            bitmap = decodedBitmap.asImageBitmap(),
+                                            contentDescription = "Foto",
+                                            modifier = Modifier.fillMaxWidth().height(180.dp),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                    }
                                 }
 
                                 Row(
